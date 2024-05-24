@@ -65,102 +65,85 @@ Final N demographics
 
 
 
-```{r read_in_df_and_subset}
+```{r read_in_df}
 homedir <- "/Users/eballer/BBL/msanxiety/"
-columns_to_make_integer <- c("ACCESSION_NUM", "PAT_AGE_AT_EXAM","MRI_ENC_AGE","CURRENT_AGE","hemoglobin", "WBC","RBC","B12","FOLATE", "TSH", "RPR","CSFAPPEAR1","CSFAPPEAR4","CSFCOLOR1",       "CSFCOLOR4","CSFTUBE","CSFTUBE4","PHQ.2","PHQ.9") #removed "VitD", not in new pull for some reason
 
 #open Rds
 data_2023_pull <- readRDS(paste0(homedir, "/data/data_2023_pull_with_curated_icd10_codes.rds"))
+```
 
-#Get med info in
-#read in BCP info, names of meds, est and prog and doses
-bcp <- read.csv("/Users/eballer/BBL/medication_data/BCP_est_and_prog_levels_and_doses_all_brands.csv", sep = ",", header = TRUE)
-bcp$bcp_name <- toupper(bcp$bcp_name)
+```{r read_in_mimosa_qc}
+#This section checks how many unique individuals had QA data, and then how many met MIMoSA QC. Some additional people lost at registration. 
 
-#read in ms med info, names of meds, mechanism, and whether or not dmt
-msmeds <- read.csv("/Users/eballer/BBL/medication_data/ms_medications_brand_and_generic.csv", sep = ",", header = TRUE)
-msmeds$Medication <- toupper(msmeds$Medication)
+#1 Total unique individuals who also have MS - 890
+#2 Total unique who had good MIMoSA - 786
+#3 Total unique with bad MIMoSA - 890-786 = 104
+#4 Total lost in streamline filtering - 3
+#5 Final N going into inclusion/exclusion - 783
 
-#depression/psych meds from NAMI website 
-psych_meds <- read.csv("/Users/eballer/BBL/medication_data/nami_psych_meds_antidepressants.csv", sep = ",", header = TRUE)
-psych_meds$Medication.Name <- toupper(psych_meds$Medication.Name)
+#read in mimosa data
+mimosa_qc <- read.csv("/Users/eballer/BBL/msdepression/data/melissa_martin_files/csv/mimosa_dataframe", sep = ",", header = FALSE) #n=2840
 
-#anxiety meds from chatgpt (cross referenced with psych meds)
-anxiety_meds <- read.csv("/Users/eballer/BBL/medication_data/antianxiety_medications.csv", sep = ",", header = TRUE)
-anxiety_meds$Medication <- toupper(anxiety_meds$Medication)
-anxiety_meds_no_beta_blocker <- anxiety_meds %>% filter(Class != "Beta_blocker")
+#preprocess data frame to extract dates, empis, and score
+empis_with_qc <- mimosa_qc %>% 
+  mutate(EMPI = as.factor(gsub(x = V5, pattern = ".*sub-(.*)/ses-.*/.*", replacement="\\1", perl = TRUE))) %>%
+  mutate(EXAM_DATE = gsub(x=V5, pattern = ".*/ses-(.{8})/.*", replacement = "\\1\\2\\3")) %>% 
+  mutate(score = V3) 
 
-##########################
-### some preprocessing ###
-##########################
-#we need to keep scans from people seen by an MS provider (n = 17067) who have an MS diagnostic code (n=16,830)
-#we make a bunch of columns from character to integer, binarize sex and race, and put date into a nice format YYYYMMDD, the %m%d%y indicates what it started out as
+#merge with whole data frame to make sure we exclude people w/out MS
+mimosa_qc_df <- merge(data_2023_pull, empis_with_qc, by = c("EMPI", "EXAM_DATE")) #n = 3592
 
-#goal is to keep people who were seen by 
- data_empi_acc_f_phq <-data_2023_pull %>% 
-   mutate(across(.cols = columns_to_make_integer, .fns = as.integer)) %>%
-   mutate(sex_binarized = ifelse(SEX == "MALE", 1, 2)) %>%
-   mutate(osex = ordered(sex_binarized,levels = c(1,2), labels = c("Male","Female"))) %>%
-   mutate(race_binarized = ifelse(RACE == "WHITE", 1, 2)) %>%
-   mutate(orace = ordered(race_binarized,levels = c(1,2), labels = c("White","Non-white"))) %>%
-   mutate(EXAM_DATE = as.Date(BEGIN_EXAM_DTTM, format = "%m/%d/%y")) %>% 
-   mutate(EXAM_DATE = gsub(EXAM_DATE, pattern = "-", replacement = "")) %>%
-   mutate(BEGIN_EXAM_DTTM = as.Date(BEGIN_EXAM_DTTM, format = "%m/%d/%y")) %>% #make sure to actually save it as date object for later processing
-   mutate(EMPI = as.factor(EMPI)) %>%
-   mutate(number_of_dx = ifelse(!is.na(ICD10), (str_count(ICD10, ";") + 1), 0)) %>%
-   mutate(number_of_dx_extended = ifelse(!is.na(all_icd10_dx), str_count(all_icd10_dx, ";") + 1, 0)) %>%
-   mutate(number_of_psychiatric_comorbidities_extended = ifelse(!is.na(all_icd10_dx), str_count(all_icd10_dx, "F"), 0)) %>%
-   mutate(number_of_anxiety_comorbidities_extended = ifelse(!is.na(all_icd10_dx), str_count(all_icd10_dx, "F4"), 0)) %>%
-   mutate(number_of_depression_comorbidities_extended = ifelse(!is.na(all_icd10_dx), str_count(all_icd10_dx, "F3"), 0)) %>%
-   mutate(number_of_medications = ifelse(!is.na(Medication), str_count(Medication, ";") + 1, 0)) %>%
-   mutate(On.Bcp = ifelse(str_detect(Medication, paste(bcp$bcp_name, collapse = "|")), 1, 0)) %>%
-   mutate(On.Psych.Meds = ifelse(str_detect(Medication, paste(psych_meds$Medication, collapse = "|")), 1, 0)) %>%
-   mutate(On.Antidepressants = ifelse(str_detect(Medication, paste(psych_meds$Medication[psych_meds$Antidepressant == "t"], collapse = "|")), 1, 0)) %>%
-   mutate(On.Anxiolytics = ifelse(str_detect(Medication, paste(anxiety_meds$Medication, collapse = "|")), 1, 0)) %>%
-   mutate(On.Anxiolytics_no_beta_blocker = ifelse(str_detect(Medication, paste(anxiety_meds_no_beta_blocker$Medication, collapse = "|")), 1, 0)) %>%
-   mutate(On.Benzos = ifelse(str_detect(Medication, paste(anxiety_meds$Medication[anxiety_meds$Class == "Benzodiazepine"], collapse = "|")), 1, 0)) %>%
-   mutate(On.Anti_cd20 = ifelse(str_detect(Medication, paste(msmeds$Medication[msmeds$Mechanism == "anti-cd20"], collapse = "|")), 1, 0)) %>%
-   mutate(On.Interferon = ifelse(str_detect(Medication, paste(msmeds$Medication[msmeds$Mechanism == "Interferon"], collapse = "|")), 1, 0)) %>%
-   mutate(On.Steroids = ifelse(str_detect(Medication, paste(msmeds$Medication[msmeds$Mechanism == "Steroid"], collapse = "|")), 1, 0)) %>%
-   mutate(On.Dmt = ifelse(str_detect(Medication, paste(msmeds$Medication[msmeds$DMT == "y"], collapse = "|")), 1, 0)) %>%
-   mutate(Has.PHQ2 = ifelse(PHQ.2 != "NULL", 1, 0)) %>%
-   mutate(Has.PHQ9 = ifelse(PHQ.9 != "NULL", 1, 0)) %>%
-   mutate(Has.depdx = ifelse(grepl("F3", all_icd10_dx), 1, 0)) %>%
-   mutate(Has.anxietydx = ifelse(grepl("F4", all_icd10_dx), 1, 0)) %>%
-   mutate(Has.depANDanx.dx = ifelse(Has.depdx & Has.anxietydx, 1, 0)) %>%
-   mutate(PHQ.2_modsev_dep_sxs = ifelse(Has.PHQ2 & PHQ.2 >= 3, 1, 0)) %>%
-   mutate(PHQ.9_modsev_dep_sxs = ifelse(Has.PHQ9 & PHQ.9 >= 10, 1, 0)) %>%
-   mutate(PHQ.2_mild_dep_sxs = ifelse(Has.PHQ2 & PHQ.2 > 0 & PHQ.2 < 3, 1, 0)) %>%
-   mutate(PHQ.9_mild_dep_sxs = ifelse(Has.PHQ9 & PHQ.9 > 0 & PHQ.9 < 10, 1, 0)) %>%
-   mutate(PHQ.2_zero = ifelse(Has.PHQ2 & PHQ.2 == 0, 1, 0)) %>%
-   mutate(PHQ.9_zero = ifelse(Has.PHQ9 & PHQ.9 == 0, 1, 0)) %>%
-   mutate(dep_by_dx_phq = ifelse((Has.depdx | PHQ.2_modsev_dep_sxs | PHQ.9_modsev_dep_sxs),1,0)) %>%
-   mutate(dep_by_dx_phq_antidep = ifelse((Has.depdx | On.Antidepressants | PHQ.2_modsev_dep_sxs | PHQ.9_modsev_dep_sxs),1,0)) %>%
-   mutate(true_healthy = ifelse((!Has.depdx & !On.Psych.Meds & (PHQ.2_zero | PHQ.9_zero)), 1, 0)) %>%
-   mutate(dep_by_dx_phq_meds_healthy_phq0_no_psych_meds = ifelse(dep_by_dx_phq_antidep | true_healthy, 1, 0)) %>%
-   rowwise(ACCESSION_NUM) %>%
-   mutate(depGroupVar =
-            sum(c(dep_by_dx_phq_meds_healthy_phq0_no_psych_meds,dep_by_dx_phq_antidep))) %>%#you get an extra point if you are in the depression group, so the end result is dep = 2, healthy = 1, 0 for exclude
-   ungroup() #n=3,737 unique people, n= 16,830 total
+#get list of unique patients, n = 890
+mimosa_qc_unique <- mimosa_qc_df %>%
+  group_by(EMPI) %>%
+  arrange(EXAM_DATE) %>%
+  slice(1) %>%
+  ungroup #n=890
+  
+#get list of unique patients with good QC, n = 867
+mimosa_unique_score_gre_75 <- mimosa_qc_unique %>%
+  filter(score >= 75) %>%
+  group_by(EMPI) %>%
+  arrange(EXAM_DATE) %>%
+  mutate(EXAM_DATA = as.character(EXAM_DATE)) %>%
+  mutate(EMPI = as.character(EMPI)) %>%
+  dplyr::select(EMPI, EXAM_DATE, score) %>%
+  slice(1) %>%
+  ungroup #n=786
+```
 
+```{r merge_df_with_mimosa}
 
+#n=867
+df_people_with_good_mimosa <- data_2023_pull %>% 
+  group_by(EMPI, EXAM_DATE) %>%
+  slice(1) %>%
+  left_join(mimosa_unique_score_gre_75, by = c("EMPI", "EXAM_DATE")) %>%
+  filter(!is.na(score))
+```
 
+```{r read_in_fascicle_info}
 ##########################################################
 #             Read in Fascicle info             #
 ##########################################################
 
-fascicle_proportions <- read.csv(paste0(homedir, "/results/fascicle_volumes_all_subjects_roi_n2336.csv"), header = T, sep = ",") #n = 2336
+fascicle_proportions <- read.csv(paste0("/Users/eballer/BBL/msdepression//results/fascicle_volumes_all_subjects_roi_n2336.csv"), header = T, sep = ",") #n = 2336
+fascicle_proportions <- fascicle_proportions %>%
+  mutate(EMPI = as.character(EMPI)) %>%
+  mutate(EXAM_DATE = as.character(EXAM_DATE))
 
 #fascicle names are contained in all but the first 2 columns of the fascicle_proportions df
 fascicle_names <- names(fascicle_proportions[3:dim(fascicle_proportions)[2]])
 
-write.table(fascicle_names,"/Users/eballer/BBL/msdepression/templates/dti/HCP_YA1065_tractography/fascicle_names.csv", row.names = F, quote = F, col.names = F)
+fascicle_names_no_cranial_nerves <- fascicle_names[grep("CN", fascicle_names, invert = TRUE)] #n=77, drop cranial nerves
+
+#write.table(fascicle_names,"/Users/eballer/BBL/msdepression/templates/dti/HCP_YA1065_tractography/fascicle_names.csv", row.names = F, quote = F, col.names = F)
 
 
 ########
 #fascicle volumes in depression network
 ########
-fascicle_volumes_dep <- read.csv(paste0(homedir, "results/streamline_volume_within_dep_network.csv"), header = T, sep = ",")
+fascicle_volumes_dep <- read.csv("/Users/eballer/BBL/msdepression/results/streamline_volume_within_dep_network.csv", header = T, sep = ",")
 
 #add column to indicate whether does not meet criteria for inclusion in dep mask (0), any overlapping voxels (1), or >10% overlapping voxels (2)
 fascicle_volumes_dep_network <- fascicle_volumes_dep %>%
@@ -169,20 +152,11 @@ fascicle_volumes_dep_network <- fascicle_volumes_dep %>%
 
 
 
-write.table(fascicle_volumes_dep_network, paste0(homedir,  "/templates/dti/HCP_YA1065_tractography/fascicle_names_dep_network_grouping.csv"), sep = ",", col.names=T)#, row.names = F, quote = F, col.names = T)
+#write.table(fascicle_volumes_dep_network, paste0(homedir,  "/templates/dti/HCP_YA1065_tractography/fascicle_names_dep_network_grouping.csv"), sep = ",", col.names=T)#, row.names = F, quote = F, col.names = T)
 
 fascicle_names_nondep_network<- fascicle_volumes_dep_network$fascicle[which(fascicle_volumes_dep_network$inDepMask == 0)]
 
 fascicle_names_dep_network_all <- fascicle_volumes_dep_network$fascicle[which(fascicle_volumes_dep_network$inDepMask > 0)]
-
-#fascicle_names_dep_network_all <- fascicle_volumes_dep_network$fascicle[which(fascicle_volumes_dep_network$inDepMask == 1)]
-#write.table(fascicle_names_dep_network_all,"/Users/eballer/BBL/msdepression/templates/dti/HCP_YA1065_tractography/fascicle_names_dep_network_all.csv", row.names = F, quote = F, col.names = F)
-
-
-fascicle_names_dep_network_10_percent <- fascicle_volumes_dep_network$fascicle[which(fascicle_volumes_dep_network$inDepMask == 2)] #n=15
-#write.table(fascicle_names_dep_network_10_percent,"/Users/eballer/BBL/msdepression/templates/dti/HCP_YA1065_tractography/fascicle_names_dep_network_10_percent.csv", row.names = F, quote = F, col.names = F)
- 
-fascicle_names_dep_network_5_percent <- fascicle_volumes_dep_network$fascicle[which(fascicle_volumes_dep_network$prop_in_mask >= 0.05)] #n=24
 
 #fascicle_mapping, returns numerical mapping as well as names of tracts, and whether in or out of dep network
 fascicle_bundle_mapping <- get_fascicle_bundle_mapping()
@@ -190,35 +164,163 @@ fascicle_bundle_mapping <- get_fascicle_bundle_mapping()
 ##########################################################
 #             Merge with data_empi              #
 ##########################################################
-df_demo_and_fascicles <- merge(data_empi_acc_f_phq, fascicle_proportions, by = c("EMPI", "EXAM_DATE")) #n = 2962
 
-##########################################################
-#                 Histos                        #
-##########################################################
-##### Histograms for PHQ2/9 healthy and depressed
+ #n = 823
+df_demo_and_fascicles <- df_people_with_good_mimosa %>% 
+  left_join(fascicle_proportions, by = c("EMPI", "EXAM_DATE")) %>%
+  filter(!is.na(Has.MS.Provider)) 
 
-hist(df_demo_and_fascicles$PHQ.2[which(!is.na(df_demo_and_fascicles$PHQ.2))], main = paste0("PHQ-2 In Good Mimosa Group : n = ", length(which(!is.na(df_demo_and_fascicles$PHQ.2)))), xlab = "PHQ-2", breaks = 8)
-
-hist(df_demo_and_fascicles$PHQ.9[which(!is.na(df_demo_and_fascicles$PHQ.9))], main = paste0("PHQ-9 In Good Mimosa Group : n = ", length(which(!is.na(df_demo_and_fascicles$PHQ.9)))), xlab = "PHQ-9", breaks = 8) 
-
-phq2_and_dep <- df_demo_and_fascicles %>% filter(depGroupVar == 2) %>% drop_na(PHQ.2) 
-phq9_and_dep <- df_demo_and_fascicles %>% filter(depGroupVar == 2) %>% drop_na(PHQ.9) 
-phq2_and_healthy <- df_demo_and_fascicles %>% filter(Has.depdx == 0) %>% drop_na(PHQ.2) 
-phq9_and_healthy <- df_demo_and_fascicles %>% filter(Has.depdx == 0) %>% drop_na(PHQ.9) 
-
-hist(phq2_and_dep$PHQ.2, main = paste0("PHQ-2/Depressed In Good Mimosa Group : n = ", dim(phq2_and_dep)[1]), xlab = "PHQ-2", breaks = 8)
-
-hist(phq9_and_dep$PHQ.9, main = paste0("PHQ-9/Depressed In Good Mimosa Group : n = ", dim(phq9_and_dep)[1]), xlab = "PHQ-9", breaks = 8)
-
-hist(phq2_and_healthy$PHQ.2, main = paste0("PHQ-2/Healthy In Good Mimosa Group : n = ", dim(phq2_and_healthy)[1]), xlab = "PHQ-2", breaks = 8)
-hist(phq9_and_healthy$PHQ.9, main = paste0("PHQ-9/Healthy In Good Mimosa Group : n = ", dim(phq9_and_healthy)[1]), xlab = "PHQ-9", breaks = 8) 
-
-
-######## Histograms for depression network
-#this histogram helps contextualize the number of streamlines with varying degrees of proportions affected
-hist(x=fascicle_volumes_dep$prop_in_mask, main = "Histogram Affected Streamlines in Dep Net", xlab = "Proportion Streamlines per Fascicle Affected", breaks = 20)
 
 ```
+
+
+#Compare disease burden by anxiety comorbidity
+```{r compare_disease_burden_by_anxiety_comorbidity}
+
+#lm
+fascicle_number_of_anxiety_dx_lm <- lapply(fascicle_names_no_cranial_nerves, function(x) 
+{
+  lm(substitute(i ~ number_of_anxiety_comorbidities_extended, list(i = as.name(x))), data = df_demo_and_fascicles)
+})
+names(fascicle_number_of_anxiety_dx_lm) <- fascicle_names_no_cranial_nerves
+fascicle_number_of_anxiety_dx_anova <- lapply(fascicle_number_of_anxiety_dx_lm, anova)
+
+#fdr corrected
+fascicle_number_of_anxiety_dx_anova_fdr <- fdr_anova_generic(fascicle_number_of_anxiety_dx_anova, 1)
+print(fascicle_number_of_anxiety_dx_anova_fdr)
+
+
+
+```
+#Has depression AND anxiety diagnoses
+```{r compare_disease_burden_by_dep_AND_anxiety_comorbidity}
+
+#lm
+fascicle_depANDanx_dx_lm <- lapply(fascicle_names_no_cranial_nerves, function(x) 
+{
+  lm(substitute(i ~ Has.depANDanx.dx, list(i = as.name(x))), data = df_demo_and_fascicles)
+})
+names(fascicle_depANDanx_dx_lm) <- fascicle_names_no_cranial_nerves
+fascicle_depANDanx_dx_anova <- lapply(fascicle_depANDanx_dx_lm, anova)
+
+#fdr corrected
+fascicle_depANDanx_dx_anova_fdr <- fdr_anova_generic(fascicle_depANDanx_dx_anova, 1)
+print(fascicle_depANDanx_dx_anova_fdr)
+
+
+
+```
+
+#compare disease burden by psychiatric comorbidity
+```{r compare_disease_burden_between_anxiety_and_no_psych_dx}
+
+#lm
+fascicle_number_of_psychiatric_dx_lm <- lapply(fascicle_names_no_cranial_nerves, function(x) 
+{
+  lm(substitute(i ~ number_of_psychiatric_comorbidities_extended, list(i = as.name(x))), data = df_demo_and_fascicles)
+})
+names(fascicle_number_of_psychiatric_dx_lm) <- fascicle_names_no_cranial_nerves
+
+fascicle_number_of_psychiatric_dx_anova <- lapply(fascicle_number_of_psychiatric_dx_lm, anova)
+
+#fdr corrected
+fascicle_number_of_psychiatric_dx_anova_fdr <- fdr_anova_generic(fascicle_number_of_psychiatric_dx_anova, 1)
+print(fascicle_number_of_psychiatric_dx_anova_fdr)
+```
+
+# Yeo network analysis attempts
+###Read in fascicle info
+```{r read_in_fascicle_info}
+##########################################################
+#             Read in Fascicle info             #
+##########################################################
+########
+#fascicle volumes in yeo networks
+########
+
+#read in file with proportions
+#fascicle_volumes_yeo_7 <- read.csv(paste0(homedir, "results/yeo_7_network_overlap_proportions.txt"), header = T, sep = ",", na.strings="0")
+
+#make titles nice
+#names(fascicle_volumes_yeo_7) <-gsub("prop_in_mask_", "prop_", names(fascicle_volumes_yeo_7))
+
+#make Nas into 0
+#fascicle_volumes_yeo_7[is.na(fascicle_volumes_yeo_7)]=0
+
+#read in file with binarized yes/no 
+fascicle_volumes_yeo_7_binarized <- read.csv(paste0(homedir_msdep, "results/yeo_7_network_overlap_proportions_binarized.txt"), header = T, sep = ",")
+
+#drop cranial nerves
+fascicle_volumes_yeo_7_binarized_no_cranial_nerves <- fascicle_volumes_yeo_7_binarized %>% filter(!grepl('CN', fascicle))
+
+#check that order of df is same as yeo networks
+new_df <- gsub(pattern = "_vol", replacement = "", x = names(df_demo_and_fascicles_prop_and_vol[grep(pattern = "_vol", x = names(df_demo_and_fascicles_prop_and_vol))]))
+
+combined_df <- data.frame(cbind(new_df, fascicle_volumes_yeo_7_binarized_no_cranial_nerves$fascicle))
+names(combined_df) <- c("df", "yeo")
+
+#they match
+combined_df$match <- combined_df$df == combined_df$yeo
+```
+
+### Calc healthy volume of yeo networks
+```{r calc_healthy_volume_of_yeo_networks}
+#multiply with the binary yeo maps to get absolute volumes of healthy
+fascicle_volumes_yeo_7_full_volumes <- fascicle_volumes_yeo_7_binarized_no_cranial_nerves %>% 
+  tibble::remove_rownames() %>%
+  tibble::column_to_rownames(var = 'fascicle') %>%
+  mutate(across(everything()) * fiber_volume_values_no_cranial_nerves$volume_full) %>%
+  rename_with(~ str_c(.x, "_vol"), everything()) 
+
+#sum the volumes of each network to get total. 
+sums_of_volume_of_healthy_fascicles_by_network <- fascicle_volumes_yeo_7_full_volumes %>%
+  summarise(across(everything(), ~ sum(., na.rm = TRUE)))
+
+```
+
+###Calculate injury to networks for each subject
+```{r calculate_injury_to_network}
+
+#grab names of networks, get rid of first element which is "fasiscle"
+yeo_network_names <- names(fascicle_volumes_yeo_7_binarized_no_cranial_nerves)[-1] 
+
+df_w_yeo_volume_info <- dep_and_healthy_groups_for_ICD_analysis_with_hydra_prop %>%
+  filter(Hydra_k2 != -1)  %>% 
+ # mutate(total_fascicle_vol_lost = rowMeans(across(all_of(fascicle_names_w_vol_suffix)))) %>%
+  group_by(EMPI) %>% 
+  arrange(EXAM_DATE) %>% 
+  slice(1) %>% 
+  dplyr::select(EMPI, Hydra_k2, ends_with("_vol")) %>%
+  ungroup()
+
+#add columns to data frame for each network
+df_w_yeo_volume_info[,yeo_network_names] = 0
+
+#this has been checked with eyeballs and works. You CAN trust the df_w_yeo_vol_info
+for (network in yeo_network_names) {
+
+  for (subj in 1:dim(df_w_yeo_volume_info)[1]) {
+      # multiply the binary vector of the network with the fascicle volumes of injury, sum, and store in data frame
+      text_to_eval <- paste0("df_w_yeo_volume_info$", network,"[", subj,"]=sum(fascicle_volumes_yeo_7_binarized_no_cranial_nerves$", network,
+      "*df_w_yeo_volume_info[",subj,",2:(dim(df_w_yeo_volume_info)[2] - 7)])")
+      eval(parse(text=text_to_eval))
+  }
+}
+
+### going to add 7 more columns to the data frame that contain the volume of injury/total healthy volume
+df_w_yeo_volume_info_with_prop_of_network <- tibble(df_w_yeo_volume_info) %>% 
+  mutate(across(all_of(yeo_network_names), 
+    .names = "{.col}_prop_net"
+    
+  ))
+
+#go through each subject, and divide their total volume of injury within each network by the overall volume of the network
+for (subj in 1:dim(df_w_yeo_volume_info_with_prop_of_network)[1]){
+  df_w_yeo_volume_info_with_prop_of_network[subj, grepl(x = names(df_w_yeo_volume_info_with_prop_of_network), pattern = "_prop_net")] = df_w_yeo_volume_info_with_prop_of_network[subj, grepl(x = names(df_w_yeo_volume_info_with_prop_of_network), pattern = "_prop_net")]/sums_of_volume_of_healthy_fascicles_by_network
+}
+
+```
+
 
 ## Depression versus healthy analysis
 
@@ -227,7 +329,7 @@ hist(x=fascicle_volumes_dep$prop_in_mask, main = "Histogram Affected Streamlines
 
 #this will display a demographics table comparing age, race, sex between healthy and depressed groups, using the first presentation to treatment
 
-make_demographics_table_ms(data_frame = data_empi_acc_f_phq)
+make_demographics_table_ms(data_frame = data_2023_pull)
 
 df_unique_empi <- data_empi_acc_f_phq %>% 
   group_by(EMPI) %>% 

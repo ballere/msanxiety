@@ -38,6 +38,9 @@ get_all_unique_ICD10_diagnoses <- function(indiv_empi) {
 
 homedir <- "/Users/eballer/BBL/msanxiety/"
 
+## output directory
+output_file <- paste0(homedir, "/data/data_2023_pull_with_curated_icd10_codes.rds")
+
 #data from dac pull with full icd10 lists
 data_pt1 <- read.csv(paste0(homedir, "/data/dac/investigatingpatientsms2010to2023_full_psych_codes_pt1.csv"), sep = ",", header = TRUE) 
 data_pt2 <- read.csv(paste0(homedir, "/data/dac/investigatingpatientsms2010to2023_full_psych_codes_pt2.csv"), sep = ",", header = TRUE) 
@@ -56,10 +59,6 @@ unique_empi_with_ms_providers <- empi_and_provider %>%
   mutate(EMPI = as.character(EMPI)) %>%
   group_by(EMPI) %>%
   slice(1)
-
-  
-## output directory
-output_file <- paste0(homedir, "/data/data_2023_pull_with_curated_icd10_codes.rds")
 
 #combine data frames
 data_pull <- rbind(data_pt1, data_pt2) %>% 
