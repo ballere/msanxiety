@@ -122,7 +122,11 @@ df_people_with_good_mimosa <- data_2023_pull %>%
   filter(!is.na(score))
 ```
 
+### Read in fascicle info, use this to determine proportion and volume of injury within each fascicle, and save it in the df_demo_and_fascicles_df
 ```{r read_in_fascicle_info}
+
+### by the end of this chunk, the df should include 77 columns each for proportion of injury and volume of injury in each fascicle
+
 ##########################################################
 #             Read in Fascicle info             #
 ##########################################################
@@ -132,35 +136,10 @@ fascicle_proportions <- fascicle_proportions %>%
   mutate(EMPI = as.character(EMPI)) %>%
   mutate(EXAM_DATE = as.character(EXAM_DATE))
 
-#fascicle names are contained in all but the first 2 columns of the fascicle_proportions df
-fascicle_names <- names(fascicle_proportions[3:dim(fascicle_proportions)[2]])
+```
 
-fascicle_names_no_cranial_nerves <- fascicle_names[grep("CN", fascicle_names, invert = TRUE)] #n=77, drop cranial nerves
-
-#write.table(fascicle_names,"/Users/eballer/BBL/msdepression/templates/dti/HCP_YA1065_tractography/fascicle_names.csv", row.names = F, quote = F, col.names = F)
-
-
-########
-#fascicle volumes in depression network
-########
-fascicle_volumes_dep <- read.csv("/Users/eballer/BBL/msdepression/results/streamline_volume_within_dep_network.csv", header = T, sep = ",")
-
-#add column to indicate whether does not meet criteria for inclusion in dep mask (0), any overlapping voxels (1), or >10% overlapping voxels (2)
-fascicle_volumes_dep_network <- fascicle_volumes_dep %>%
-  replace(is.na(.), 0) %>%
-  mutate(inDepMask=case_when(prop_in_mask == 0 ~ 0, (prop_in_mask > 0 & prop_in_mask < 0.1) ~ 1, prop_in_mask >= 0.1 ~ 2))
-
-
-
-#write.table(fascicle_volumes_dep_network, paste0(homedir,  "/templates/dti/HCP_YA1065_tractography/fascicle_names_dep_network_grouping.csv"), sep = ",", col.names=T)#, row.names = F, quote = F, col.names = T)
-
-fascicle_names_nondep_network<- fascicle_volumes_dep_network$fascicle[which(fascicle_volumes_dep_network$inDepMask == 0)]
-
-fascicle_names_dep_network_all <- fascicle_volumes_dep_network$fascicle[which(fascicle_volumes_dep_network$inDepMask > 0)]
-
-#fascicle_mapping, returns numerical mapping as well as names of tracts, and whether in or out of dep network
-fascicle_bundle_mapping <- get_fascicle_bundle_mapping()
-
+## Merge data with good mimosa
+```{r merge_with_good_mimosa}
 ##########################################################
 #             Merge with data_empi              #
 ##########################################################
@@ -174,63 +153,62 @@ df_demo_and_fascicles <- df_people_with_good_mimosa %>%
 ```
 
 
-#Compare disease burden by anxiety comorbidity
-```{r compare_disease_burden_by_anxiety_comorbidity}
+```{r add_suffix_to_each_measure}
 
-#lm
-fascicle_number_of_anxiety_dx_lm <- lapply(fascicle_names_no_cranial_nerves, function(x) 
-{
-  lm(substitute(i ~ number_of_anxiety_comorbidities_extended, list(i = as.name(x))), data = df_demo_and_fascicles)
-})
-names(fascicle_number_of_anxiety_dx_lm) <- fascicle_names_no_cranial_nerves
-fascicle_number_of_anxiety_dx_anova <- lapply(fascicle_number_of_anxiety_dx_lm, anova)
+#########################################
+## Get vectors with names of fascicles ##
+#########################################
 
-#fdr corrected
-fascicle_number_of_anxiety_dx_anova_fdr <- fdr_anova_generic(fascicle_number_of_anxiety_dx_anova, 1)
-print(fascicle_number_of_anxiety_dx_anova_fdr)
+#fascicle names are contained in all but the first 2 columns of the fascicle_proportions df
+fascicle_names <- names(fascicle_proportions[3:dim(fascicle_proportions)[2]])
+fascicle_names_no_cranial_nerves <- fascicle_names[grep("CN", fascicle_names, invert = TRUE)] #n=77, drop cranial nerves
+
+fascicle_names_w_prop_suffix <- gsub(pattern = "(.*)", replacement = "\\1_prop", perl=TRUE, x = fascicle_names_no_cranial_nerves)
+fascicle_names_w_vol_suffix <- gsub(pattern = "(.*)", replacement = "\\1_vol", perl=TRUE, x = fascicle_names_no_cranial_nerves)
 
 
+#write.table(fascicle_names,"/Users/eballer/BBL/msdepression/templates/dti/HCP_YA1065_tractography/fascicle_names.csv", row.names = F, quote = F, col.names = F)
 
+
+#read in volumes of fascicles and make columns reflecting volume of disease injured per fascicle
+
+##########################################################
+#  Add columns for volume and change proportion names    #
+##########################################################
+
+#read in fiber volume values
+fiber_volume_values <- read.csv("/Users/eballer/BBL/msdepression/templates/dti/HCP_YA1065_tractography/fiber_volume_values.csv", sep=",", header = T)
+
+#remove cranial nerves
+fiber_volume_values_no_cranial_nerves <- fiber_volume_values %>% filter(fascicle %in% fascicle_names_no_cranial_nerves) %>%
+  slice(order(factor(fascicle, levels = fascicle_names_no_cranial_nerves)))
+
+
+#extract data frame that only includes the fascicle proportion lost
+df_fascicles_prop <- df_demo_and_fascicles[ , (names(df_demo_and_fascicles) %in% fascicle_names_no_cranial_nerves)] 
+df_everything_else <- df_demo_and_fascicles[ , !(names(df_demo_and_fascicles) %in% fascicle_names_no_cranial_nerves)]
+
+#multiply each row by the vector of total volumes to extract volume of disease within fascicle
+df_fascicles_volumes <- sweep(x = df_fascicles_prop, MARGIN = 2,                        # Sweep with Complex STATS
+                  STATS = fiber_volume_values_no_cranial_nerves$volume_full, FUN = "*") %>%
+  mutate_if(is.numeric, round) #round all values
+
+# change name of df_fascicle_volumes to have the suffix, and add a suffix for the proportion measures
+names(df_fascicles_prop) <- fascicle_names_w_prop_suffix
+names(df_fascicles_volumes) <- fascicle_names_w_vol_suffix
+
+
+#combine back with data_fram
+#df_demo_and_fascicle_volumes_full <- cbind(df_everything_else, df_fascicle_volumes)
+df_demo_and_fascicles <- cbind(df_everything_else, df_fascicles_prop, df_fascicles_volumes)
 ```
-#Has depression AND anxiety diagnoses
-```{r compare_disease_burden_by_dep_AND_anxiety_comorbidity}
-
-#lm
-fascicle_depANDanx_dx_lm <- lapply(fascicle_names_no_cranial_nerves, function(x) 
-{
-  lm(substitute(i ~ Has.depANDanx.dx, list(i = as.name(x))), data = df_demo_and_fascicles)
-})
-names(fascicle_depANDanx_dx_lm) <- fascicle_names_no_cranial_nerves
-fascicle_depANDanx_dx_anova <- lapply(fascicle_depANDanx_dx_lm, anova)
-
-#fdr corrected
-fascicle_depANDanx_dx_anova_fdr <- fdr_anova_generic(fascicle_depANDanx_dx_anova, 1)
-print(fascicle_depANDanx_dx_anova_fdr)
 
 
 
-```
-
-#compare disease burden by psychiatric comorbidity
-```{r compare_disease_burden_between_anxiety_and_no_psych_dx}
-
-#lm
-fascicle_number_of_psychiatric_dx_lm <- lapply(fascicle_names_no_cranial_nerves, function(x) 
-{
-  lm(substitute(i ~ number_of_psychiatric_comorbidities_extended, list(i = as.name(x))), data = df_demo_and_fascicles)
-})
-names(fascicle_number_of_psychiatric_dx_lm) <- fascicle_names_no_cranial_nerves
-
-fascicle_number_of_psychiatric_dx_anova <- lapply(fascicle_number_of_psychiatric_dx_lm, anova)
-
-#fdr corrected
-fascicle_number_of_psychiatric_dx_anova_fdr <- fdr_anova_generic(fascicle_number_of_psychiatric_dx_anova, 1)
-print(fascicle_number_of_psychiatric_dx_anova_fdr)
-```
 
 # Yeo network analysis attempts
 ###Read in fascicle info
-```{r read_in_fascicle_info}
+```{r read_in_yeo_fascicle_info}
 ##########################################################
 #             Read in Fascicle info             #
 ##########################################################
@@ -248,13 +226,13 @@ print(fascicle_number_of_psychiatric_dx_anova_fdr)
 #fascicle_volumes_yeo_7[is.na(fascicle_volumes_yeo_7)]=0
 
 #read in file with binarized yes/no 
-fascicle_volumes_yeo_7_binarized <- read.csv(paste0(homedir_msdep, "results/yeo_7_network_overlap_proportions_binarized.txt"), header = T, sep = ",")
+fascicle_volumes_yeo_7_binarized <- read.csv("/Users/eballer/BBL/msdepression/results/yeo_7_network_overlap_proportions_binarized.txt", header = T, sep = ",")
 
 #drop cranial nerves
 fascicle_volumes_yeo_7_binarized_no_cranial_nerves <- fascicle_volumes_yeo_7_binarized %>% filter(!grepl('CN', fascicle))
 
 #check that order of df is same as yeo networks
-new_df <- gsub(pattern = "_vol", replacement = "", x = names(df_demo_and_fascicles_prop_and_vol[grep(pattern = "_vol", x = names(df_demo_and_fascicles_prop_and_vol))]))
+new_df <- gsub(pattern = "_vol", replacement = "", x = names(df_demo_and_fascicles[grep(pattern = "_vol", x = names(df_demo_and_fascicles))]))
 
 combined_df <- data.frame(cbind(new_df, fascicle_volumes_yeo_7_binarized_no_cranial_nerves$fascicle))
 names(combined_df) <- c("df", "yeo")
@@ -284,25 +262,22 @@ sums_of_volume_of_healthy_fascicles_by_network <- fascicle_volumes_yeo_7_full_vo
 #grab names of networks, get rid of first element which is "fasiscle"
 yeo_network_names <- names(fascicle_volumes_yeo_7_binarized_no_cranial_nerves)[-1] 
 
-df_w_yeo_volume_info <- dep_and_healthy_groups_for_ICD_analysis_with_hydra_prop %>%
-  filter(Hydra_k2 != -1)  %>% 
- # mutate(total_fascicle_vol_lost = rowMeans(across(all_of(fascicle_names_w_vol_suffix)))) %>%
-  group_by(EMPI) %>% 
-  arrange(EXAM_DATE) %>% 
-  slice(1) %>% 
-  dplyr::select(EMPI, Hydra_k2, ends_with("_vol")) %>%
+df_w_yeo_volume_info <- df_demo_and_fascicles %>%
+  # mutate(total_fascicle_vol_lost = rowMeans(across(all_of(fascicle_names_w_vol_suffix)))) %>%
+  dplyr::select(EMPI, ends_with("_vol")) %>%
   ungroup()
 
 #add columns to data frame for each network
 df_w_yeo_volume_info[,yeo_network_names] = 0
 
-#this has been checked with eyeballs and works. You CAN trust the df_w_yeo_vol_info
+#this has been checked with eyeballs and works. You CAN trust the df_w_yeo_volume_info
 for (network in yeo_network_names) {
 
   for (subj in 1:dim(df_w_yeo_volume_info)[1]) {
       # multiply the binary vector of the network with the fascicle volumes of injury, sum, and store in data frame
       text_to_eval <- paste0("df_w_yeo_volume_info$", network,"[", subj,"]=sum(fascicle_volumes_yeo_7_binarized_no_cranial_nerves$", network,
-      "*df_w_yeo_volume_info[",subj,",2:(dim(df_w_yeo_volume_info)[2] - 7)])")
+      "*df_w_yeo_volume_info[",subj,",3:(dim(df_w_yeo_volume_info)[2] - 7)])")
+     # print(text_to_eval)
       eval(parse(text=text_to_eval))
   }
 }
@@ -319,7 +294,140 @@ for (subj in 1:dim(df_w_yeo_volume_info_with_prop_of_network)[1]){
   df_w_yeo_volume_info_with_prop_of_network[subj, grepl(x = names(df_w_yeo_volume_info_with_prop_of_network), pattern = "_prop_net")] = df_w_yeo_volume_info_with_prop_of_network[subj, grepl(x = names(df_w_yeo_volume_info_with_prop_of_network), pattern = "_prop_net")]/sums_of_volume_of_healthy_fascicles_by_network
 }
 
+### rename the whole new data frame df_demo_and_fascicles
+df_demo_and_fascicles <- df_w_yeo_volume_info_with_prop_of_network %>% 
+  dplyr::select(-contains('_vol')) %>% #removes all columns with volume, leaving only the exam date, empi, and yeo values
+  right_join(df_demo_and_fascicles, by = c("EXAM_DATE", "EMPI")) #combine with demo_and_fascicles
+
+  
+
 ```
+
+
+#summarize means across all fascicles
+```{r make_summary_measures_of_fascicle_burden}
+
+df_demo_and_fascicles <- df_demo_and_fascicles %>%
+  mutate(total_fascicle_prop_lost_no_cranial_nerves = rowMeans(across(fascicle_names_w_prop_suffix))) %>%
+  mutate(total_fascicle_volume_lost_no_cranial_nerves = rowMeans(across(fascicle_names_w_vol_suffix)))
+```
+
+#Compare disease burden by anxiety comorbidity
+```{r compare_disease_burden_by_anxiety_comorbidity}
+
+#lm
+fascicle_number_of_anxiety_dx_lm <- lapply(fascicle_names_w_prop_suffix, function(x) 
+{
+  lm(substitute(i ~ number_of_anxiety_comorbidities_extended, list(i = as.name(x))), data = df_demo_and_fascicles)
+})
+names(fascicle_number_of_anxiety_dx_lm) <- fascicle_names_w_prop_suffix
+fascicle_number_of_anxiety_dx_anova <- lapply(fascicle_number_of_anxiety_dx_lm, anova)
+
+#fdr corrected
+fascicle_number_of_anxiety_dx_anova_fdr <- fdr_anova_generic(fascicle_number_of_anxiety_dx_anova, 1)
+print(fascicle_number_of_anxiety_dx_anova_fdr)
+
+## limbic area disease by anxiety diagnosis
+
+yeo_lim_no_anxiety <- lm(LIM~number_of_anxiety_comorbidities_extended, data = df_demo_and_fascicles) #nothing
+
+```
+#Has depression AND anxiety diagnoses
+```{r compare_disease_burden_by_dep_AND_anxiety_comorbidity}
+
+#lm
+fascicle_depANDanx_dx_lm <- lapply(fascicle_names_w_prop_suffix, function(x) 
+{
+  lm(substitute(i ~ Has.depANDanx.dx, list(i = as.name(x))), data = df_demo_and_fascicles)
+})
+names(fascicle_depANDanx_dx_lm) <- fascicle_names_w_prop_suffix
+fascicle_depANDanx_dx_anova <- lapply(fascicle_depANDanx_dx_lm, anova)
+
+#fdr corrected
+fascicle_depANDanx_dx_anova_fdr <- fdr_anova_generic(fascicle_depANDanx_dx_anova, 1)
+print(fascicle_depANDanx_dx_anova_fdr)
+
+```
+
+#compare disease burden by psychiatric comorbidity
+```{r compare_disease_burden_between_anxiety_and_no_psych_dx}
+
+#lm
+fascicle_number_of_psychiatric_dx_lm <- lapply(fascicle_names_w_prop_suffix, function(x) 
+{
+  lm(substitute(i ~ number_of_psychiatric_comorbidities_extended, list(i = as.name(x))), data = df_demo_and_fascicles)
+})
+names(fascicle_number_of_psychiatric_dx_lm) <- fascicle_names_w_prop_suffix
+
+fascicle_number_of_psychiatric_dx_anova <- lapply(fascicle_number_of_psychiatric_dx_lm, anova)
+
+#fdr corrected
+fascicle_number_of_psychiatric_dx_anova_fdr <- fdr_anova_generic(fascicle_number_of_psychiatric_dx_anova, 1)
+print(fascicle_number_of_psychiatric_dx_anova_fdr)
+
+
+## yeo
+#lm
+psych_comorbidity_lm_yeo <- lapply(yeo_network_names, function(x) 
+{
+  lm(substitute(i ~ number_of_psychiatric_comorbidities_extended, list(i = as.name(x))), data = anxiety_vs_no_psych)
+})
+names(psych_comorbidity_lm_yeo) <- yeo_network_names
+
+psych_comorbidity_yeo_anova <- lapply(psych_comorbidity_lm_yeo, anova)
+
+#fdr corrected
+psych_comorbidity_yeo_anova_fdr <- fdr_anova_generic(psych_comorbidity_yeo_anova, 1)
+print(psych_comorbidity_yeo_anova_fdr)
+
+
+```
+
+##compare disease in anxiety versus patients with no psychiatric comorbidity
+```{r anxiety_vs_healthy_ish}
+
+anxiety_vs_no_psych <- df_demo_and_fascicles %>%
+  mutate(anxietyGroupVar = ifelse(Has.anxietydx, 2, ifelse(healthy_ish, 1, 0))) %>% #complicated, if they have an anxiety disorder, they get a 2, if they are health-ish, no psych dx or meds, 1, otherwise, exclude
+  filter(anxietyGroupVar != 0) %>% #get rid of the people who are not anxious and not healthy_ish, n =650, lost n=173
+  group_by(EMPI) %>%
+  arrange(EXAM_DATE) %>%
+  slice(1) %>%
+  ungroup
+
+
+#lm
+anxiety_vs_no_psych_lm <- lapply(fascicle_names_w_prop_suffix, function(x) 
+{
+  lm(substitute(i ~ anxietyGroupVar, list(i = as.name(x))), data = anxiety_vs_no_psych)
+})
+names(anxiety_vs_no_psych_lm) <- fascicle_names_w_prop_suffix
+
+anxiety_vs_no_psych_lm_anova <- lapply(anxiety_vs_no_psych_lm, anova)
+
+#fdr corrected
+anxiety_vs_no_psych_lm_anova_fdr <- fdr_anova_generic(anxiety_vs_no_psych_lm_anova, 1)
+print(anxiety_vs_no_psych_lm_anova_fdr)
+
+
+## yeo
+#lm
+anxiety_vs_no_psych_lm_yeo <- lapply(yeo_network_names, function(x) 
+{
+  lm(substitute(i ~ anxietyGroupVar, list(i = as.name(x))), data = anxiety_vs_no_psych)
+})
+names(anxiety_vs_no_psych_lm_yeo) <- yeo_network_names
+
+anxiety_vs_no_psych_yeo_anova <- lapply(anxiety_vs_no_psych_lm_yeo, anova)
+
+#fdr corrected
+anxiety_vs_no_psych_yeo_anova_fdr <- fdr_anova_generic(anxiety_vs_no_psych_yeo_anova, 1)
+print(anxiety_vs_no_psych_yeo_anova_fdr)
+
+
+
+```
+
+
 
 
 ## Depression versus healthy analysis

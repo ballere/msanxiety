@@ -6,6 +6,8 @@
 ## dependencies: dplyr
 
 library(dplyr)
+library(tidyr)
+library(stringr)
 
 
 ######################
@@ -70,7 +72,7 @@ for(row in 1:dim(data_pull)[1]) {
   data_pull$all_icd10_dx[row] <- get_all_unique_ICD10_diagnoses(data_pull$EMPI[row])
 }
 
-columns_to_make_integer <- c("ACCESSION_NUM", "PAT_AGE_AT_EXAM","MRI_ENC_AGE","CURRENT_AGE","hemoglobin", "WBC","RBC","B12","FOLATE", "TSH", "RPR","CSFAPPEAR1","CSFAPPEAR4","CSFCOLOR1",       "CSFCOLOR4","CSFTUBE","CSFTUBE4","PHQ.2","PHQ.9") #removed "VitD", not in new pull for some reason
+columns_to_make_integer <- c("ACCESSION_NUM", "PAT_AGE_AT_EXAM","MRI_ENC_AGE","CURRENT_AGE","hemoglobin", "WBC","RBC","B12","FOLATE", "TSH", "RPR","CSFAPPEAR1","CSFAPPEAR4","CSFCOLOR1", "CSFCOLOR4","CSFTUBE","CSFTUBE4","PHQ.2","PHQ.9") #removed "VitD", not in new pull for some reason
 
 #Get med info in
 #read in BCP info, names of meds, est and prog and doses
@@ -140,7 +142,8 @@ data_final_rds <-data_pull %>%
   mutate(PHQ.9_zero = ifelse(Has.PHQ9 & PHQ.9 == 0, 1, 0)) %>%
   mutate(dep_by_dx_phq = ifelse((Has.depdx | PHQ.2_modsev_dep_sxs | PHQ.9_modsev_dep_sxs),1,0)) %>%
   mutate(dep_by_dx_phq_antidep = ifelse((Has.depdx | On.Antidepressants | PHQ.2_modsev_dep_sxs | PHQ.9_modsev_dep_sxs),1,0)) %>%
-  mutate(true_healthy = ifelse((!Has.depdx & !On.Psych.Meds & (PHQ.2_zero | PHQ.9_zero)), 1, 0)) %>%
+  mutate(healthy_ish = ifelse(((number_of_psychiatric_comorbidities_extended == 0) & !On.Psych.Meds), 1, 0)) %>% #just like true healthy but doesn't require a phq screen
+  mutate(true_healthy = ifelse(((number_of_psychiatric_comorbidities_extended == 0) & !On.Psych.Meds & (PHQ.2_zero | PHQ.9_zero)), 1, 0)) %>%
   mutate(dep_by_dx_phq_meds_healthy_phq0_no_psych_meds = ifelse(dep_by_dx_phq_antidep | true_healthy, 1, 0)) %>%
   left_join(unique_empi_with_ms_providers, by = "EMPI") %>% 
   rowwise(ACCESSION_NUM) %>%
