@@ -389,6 +389,7 @@ print(psych_comorbidity_yeo_anova_fdr)
 anxiety_vs_no_psych <- df_demo_and_fascicles %>%
   mutate(anxietyGroupVar = ifelse(Has.anxietydx, 2, ifelse(healthy_ish, 1, 0))) %>% #complicated, if they have an anxiety disorder, they get a 2, if they are health-ish, no psych dx or meds, 1, otherwise, exclude
   filter(anxietyGroupVar != 0) %>% #get rid of the people who are not anxious and not healthy_ish, n =650, lost n=173
+  filter(is.na(depGroupVar)) %>% #exclude people with depression (87 have both depression and anxiety), n = 563, anxiety = 101, nonanxious = 462)
   group_by(EMPI) %>%
   arrange(EXAM_DATE) %>%
   slice(1) %>%
