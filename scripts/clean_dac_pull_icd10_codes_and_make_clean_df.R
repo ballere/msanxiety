@@ -87,6 +87,11 @@ msmeds$Medication <- toupper(msmeds$Medication)
 psych_meds <- read.csv("/Users/eballer/BBL/medication_data/nami_psych_meds_antidepressants.csv", sep = ",", header = TRUE)
 psych_meds$Medication.Name <- toupper(psych_meds$Medication.Name)
 
+#depression/psych meds from NAMI website + neurontin, gabapentin, elavil, amitriptyline
+psych_meds_extended <- read.csv("/Users/eballer/BBL/medication_data/nami_psych_meds_antidepressants_plus_gabapentin_and_amitriptyline.csv", sep = ",", header = TRUE)
+psych_meds_extended$Medication.Name <- toupper(psych_meds_extended$Medication.Name)
+
+
 #anxiety meds from chatgpt (cross referenced with psych meds)
 anxiety_meds <- read.csv("/Users/eballer/BBL/medication_data/antianxiety_medications.csv", sep = ",", header = TRUE)
 anxiety_meds$Medication <- toupper(anxiety_meds$Medication)
@@ -120,6 +125,7 @@ data_final_rds <-data_pull %>%
   mutate(number_of_medications = ifelse(!is.na(Medication), str_count(Medication, ";") + 1, 0)) %>%
   mutate(On.Bcp = ifelse(str_detect(Medication, paste(bcp$bcp_name, collapse = "|")), 1, 0)) %>%
   mutate(On.Psych.Meds = ifelse(str_detect(Medication, paste(psych_meds$Medication, collapse = "|")), 1, 0)) %>%
+  mutate(On.Psych.Meds.Extended = ifelse(str_detect(Medication, paste(psych_meds_extended$Medication, collapse = "|")), 1, 0)) %>% #extended includes amitriptyline and gabapentin (and brands) in med list
   mutate(On.Antidepressants = ifelse(str_detect(Medication, paste(psych_meds$Medication[psych_meds$Antidepressant == "t"], collapse = "|")), 1, 0)) %>%
   mutate(On.Anxiolytics = ifelse(str_detect(Medication, paste(anxiety_meds$Medication, collapse = "|")), 1, 0)) %>%
   mutate(On.Anxiolytics_no_beta_blocker = ifelse(str_detect(Medication, paste(anxiety_meds_no_beta_blocker$Medication, collapse = "|")), 1, 0)) %>%
@@ -134,6 +140,7 @@ data_final_rds <-data_pull %>%
   mutate(Has.anxietydx = ifelse(grepl("F4", all_icd10_dx), 1, 0)) %>%
   mutate(Has.CannabisUsedx = ifelse(grepl("F12", all_icd10_dx), 1, 0)) %>%
   mutate(Has.depANDanx.dx = ifelse(Has.depdx & Has.anxietydx, 1, 0)) %>%
+  mutate(Has.Anxietydx.Or.Antianxietymed = ifelse(Has.anxietydx | On.Anxiolytics,1,0)) %>%
   mutate(PHQ.2_modsev_dep_sxs = ifelse(Has.PHQ2 & PHQ.2 >= 3, 1, 0)) %>%
   mutate(PHQ.9_modsev_dep_sxs = ifelse(Has.PHQ9 & PHQ.9 >= 10, 1, 0)) %>%
   mutate(PHQ.2_mild_dep_sxs = ifelse(Has.PHQ2 & PHQ.2 > 0 & PHQ.2 < 3, 1, 0)) %>%

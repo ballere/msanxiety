@@ -144,10 +144,11 @@ fascicle_proportions <- fascicle_proportions %>%
 #             Merge with data_empi              #
 ##########################################################
 
- #n = 823
+ #n = 812
 df_demo_and_fascicles <- df_people_with_good_mimosa %>% 
   left_join(fascicle_proportions, by = c("EMPI", "EXAM_DATE")) %>%
-  filter(!is.na(Has.MS.Provider)) 
+  filter(!is.na(Has.MS.Provider)) %>% #remove people who don't have MS provider
+  filter(!is.na(CNII_L)) #this is a sample fascicle that should have a value. if it does not, it means something is usually wrong with whole person. Remove rows with NAs
 
 
 ```
@@ -203,10 +204,7 @@ names(df_fascicles_volumes) <- fascicle_names_w_vol_suffix
 df_demo_and_fascicles <- cbind(df_everything_else, df_fascicles_prop, df_fascicles_volumes)
 ```
 
-
-
-
-# Yeo network analysis attempts
+##YEO Networks
 ###Read in fascicle info
 ```{r read_in_yeo_fascicle_info}
 ##########################################################
@@ -262,6 +260,9 @@ sums_of_volume_of_healthy_fascicles_by_network <- fascicle_volumes_yeo_7_full_vo
 #grab names of networks, get rid of first element which is "fasiscle"
 yeo_network_names <- names(fascicle_volumes_yeo_7_binarized_no_cranial_nerves)[-1] 
 
+#make names with _prop_net for use later to grap columns of proportions and not volumes
+yeo_network_names_prop <- paste(yeo_network_names, 'prop_net', sep = '_')
+
 df_w_yeo_volume_info <- df_demo_and_fascicles %>%
   # mutate(total_fascicle_vol_lost = rowMeans(across(all_of(fascicle_names_w_vol_suffix)))) %>%
   dplyr::select(EMPI, ends_with("_vol")) %>%
@@ -307,9 +308,10 @@ df_demo_and_fascicles <- df_w_yeo_volume_info_with_prop_of_network %>%
 #summarize means across all fascicles
 ```{r make_summary_measures_of_fascicle_burden}
 
+#n=812
 df_demo_and_fascicles <- df_demo_and_fascicles %>%
-  mutate(total_fascicle_prop_lost_no_cranial_nerves = rowMeans(across(fascicle_names_w_prop_suffix))) %>%
-  mutate(total_fascicle_volume_lost_no_cranial_nerves = rowMeans(across(fascicle_names_w_vol_suffix)))
+  mutate(total_fascicle_prop_lost_no_cranial_nerves = rowMeans(across(all_of(fascicle_names_w_prop_suffix)))) %>%
+  mutate(total_fascicle_volume_lost_no_cranial_nerves = rowMeans(across(all_of(fascicle_names_w_vol_suffix))))
 ```
 
 #Compare disease burden by anxiety comorbidity
@@ -322,6 +324,16 @@ fascicle_number_of_anxiety_dx_lm <- lapply(fascicle_names_w_prop_suffix, functio
 })
 names(fascicle_number_of_anxiety_dx_lm) <- fascicle_names_w_prop_suffix
 fascicle_number_of_anxiety_dx_anova <- lapply(fascicle_number_of_anxiety_dx_lm, anova)
+
+##uncorrected
+p_anova <- as.data.frame(sapply(fascicle_number_of_anxiety_dx_anova, function(v) v$"Pr(>F)"[1]) )
+
+#extract values that are significant
+p_anova_unc <- as.data.frame(cbind(row.names(p_anova)[p_anova < 0.05], p_anova[p_anova <0.05]))
+
+#print BEFORE FDR correction 
+print(p_anova_unc)
+
 
 #fdr corrected
 fascicle_number_of_anxiety_dx_anova_fdr <- fdr_anova_generic(fascicle_number_of_anxiety_dx_anova, 1)
@@ -343,6 +355,15 @@ fascicle_depANDanx_dx_lm <- lapply(fascicle_names_w_prop_suffix, function(x)
 names(fascicle_depANDanx_dx_lm) <- fascicle_names_w_prop_suffix
 fascicle_depANDanx_dx_anova <- lapply(fascicle_depANDanx_dx_lm, anova)
 
+##uncorrected
+p_anova <- as.data.frame(sapply(fascicle_depANDanx_dx_anova, function(v) v$"Pr(>F)"[1]) )
+
+#extract values that are significant
+p_anova_unc <- as.data.frame(cbind(row.names(p_anova)[p_anova < 0.05], p_anova[p_anova <0.05]))
+
+#print BEFORE FDR correction 
+print(p_anova_unc)
+
 #fdr corrected
 fascicle_depANDanx_dx_anova_fdr <- fdr_anova_generic(fascicle_depANDanx_dx_anova, 1)
 print(fascicle_depANDanx_dx_anova_fdr)
@@ -361,6 +382,17 @@ names(fascicle_number_of_psychiatric_dx_lm) <- fascicle_names_w_prop_suffix
 
 fascicle_number_of_psychiatric_dx_anova <- lapply(fascicle_number_of_psychiatric_dx_lm, anova)
 
+#Pull p-values
+p_anova <- as.data.frame(sapply(fascicle_number_of_psychiatric_dx_anova, function(v) v$"Pr(>F)"[1]) )
+
+#extract values that are significant
+p_anova_unc <- as.data.frame(cbind(row.names(p_anova)[p_anova < 0.05], p_anova[p_anova <0.05]))
+
+#print BEFORE FDR correction 
+print(p_anova_unc)
+
+
+
 #fdr corrected
 fascicle_number_of_psychiatric_dx_anova_fdr <- fdr_anova_generic(fascicle_number_of_psychiatric_dx_anova, 1)
 print(fascicle_number_of_psychiatric_dx_anova_fdr)
@@ -370,11 +402,22 @@ print(fascicle_number_of_psychiatric_dx_anova_fdr)
 #lm
 psych_comorbidity_lm_yeo <- lapply(yeo_network_names, function(x) 
 {
-  lm(substitute(i ~ number_of_psychiatric_comorbidities_extended, list(i = as.name(x))), data = anxiety_vs_no_psych)
+  lm(substitute(i ~ number_of_psychiatric_comorbidities_extended, list(i = as.name(x))), data = df_demo_and_fascicles)
 })
 names(psych_comorbidity_lm_yeo) <- yeo_network_names
 
 psych_comorbidity_yeo_anova <- lapply(psych_comorbidity_lm_yeo, anova)
+
+#uncorrected
+#Pull p-values
+p_anova <- as.data.frame(sapply(psych_comorbidity_yeo_anova, function(v) v$"Pr(>F)"[1]) )
+
+#extract values that are significant
+p_anova_unc <- as.data.frame(cbind(row.names(p_anova)[p_anova < 0.05], p_anova[p_anova <0.05]))
+
+#print BEFORE FDR correction 
+print(p_anova_unc)
+
 
 #fdr corrected
 psych_comorbidity_yeo_anova_fdr <- fdr_anova_generic(psych_comorbidity_yeo_anova, 1)
@@ -388,8 +431,8 @@ print(psych_comorbidity_yeo_anova_fdr)
 
 anxiety_vs_no_psych <- df_demo_and_fascicles %>%
   mutate(anxietyGroupVar = ifelse(Has.anxietydx, 2, ifelse(healthy_ish, 1, 0))) %>% #complicated, if they have an anxiety disorder, they get a 2, if they are health-ish, no psych dx or meds, 1, otherwise, exclude
-  filter(anxietyGroupVar != 0) %>% #get rid of the people who are not anxious and not healthy_ish, n =650, lost n=173
-  filter(is.na(depGroupVar)) %>% #exclude people with depression (87 have both depression and anxiety), n = 563, anxiety = 101, nonanxious = 462)
+  filter(anxietyGroupVar != 0) %>% #get rid of the people who are not anxious and not healthy_ish, n =643, lost n=169
+  filter(is.na(depGroupVar)) %>% #exclude people with depression (87 have both depression and anxiety), n = 557, anxiety = 101, nonanxious = 456)
   group_by(EMPI) %>%
   arrange(EXAM_DATE) %>%
   slice(1) %>%
@@ -404,6 +447,17 @@ anxiety_vs_no_psych_lm <- lapply(fascicle_names_w_prop_suffix, function(x)
 names(anxiety_vs_no_psych_lm) <- fascicle_names_w_prop_suffix
 
 anxiety_vs_no_psych_lm_anova <- lapply(anxiety_vs_no_psych_lm, anova)
+
+#uncorrected
+#Pull p-values
+p_anova <- as.data.frame(sapply(anxiety_vs_no_psych_lm_anova, function(v) v$"Pr(>F)"[1]) )
+
+#extract values that are significant
+p_anova_unc <- as.data.frame(cbind(row.names(p_anova)[p_anova < 0.05], p_anova[p_anova <0.05]))
+
+#print BEFORE FDR correction 
+print(p_anova_unc)
+
 
 #fdr corrected
 anxiety_vs_no_psych_lm_anova_fdr <- fdr_anova_generic(anxiety_vs_no_psych_lm_anova, 1)
@@ -420,10 +474,134 @@ names(anxiety_vs_no_psych_lm_yeo) <- yeo_network_names
 
 anxiety_vs_no_psych_yeo_anova <- lapply(anxiety_vs_no_psych_lm_yeo, anova)
 
+#uncorrected
+#Pull p-values
+p_anova <- as.data.frame(sapply(anxiety_vs_no_psych_yeo_anova, function(v) v$"Pr(>F)"[1]) )
+
+
+#extract values that are significant
+p_anova_unc <- as.data.frame(cbind(row.names(p_anova)[p_anova < 0.05], p_anova[p_anova <0.05]))
+
+#print BEFORE FDR correction 
+print(p_anova_unc)
+
+
+
+
 #fdr corrected
 anxiety_vs_no_psych_yeo_anova_fdr <- fdr_anova_generic(anxiety_vs_no_psych_yeo_anova, 1)
 print(anxiety_vs_no_psych_yeo_anova_fdr)
 
+
+
+```
+### Run analysis again but include in anxiety group people on anti-anxiety meds
+```{r anxiety_oranxiety_meds_vs_healthy_ish}
+
+anxiety_vs_no_psych <- df_demo_and_fascicles %>%
+  mutate(anxietyGroupVar = ifelse((Has.anxietydx | On.Anxiolytics_no_beta_blocker), 2, ifelse(healthy_ish, 1, 0))) %>% #complicated, if they have an anxiety disorder, they get a 2, if they are health-ish, no psych dx or meds, 1, otherwise, exclude
+  filter(anxietyGroupVar != 0) %>% #get rid of the people who are not anxious and not healthy_ish, n =643, lost n=169
+  filter(is.na(depGroupVar)) %>% #exclude people with depression (87 have both depression and anxiety), n = 557, anxiety = 101, nonanxious = 456)
+  group_by(EMPI) %>%
+  arrange(EXAM_DATE) %>%
+  slice(1) %>%
+  ungroup
+
+
+#lm
+anxiety_vs_no_psych_lm <- lapply(fascicle_names_w_prop_suffix, function(x) 
+{
+  lm(substitute(i ~ anxietyGroupVar, list(i = as.name(x))), data = anxiety_vs_no_psych)
+})
+names(anxiety_vs_no_psych_lm) <- fascicle_names_w_prop_suffix
+
+anxiety_vs_no_psych_lm_anova <- lapply(anxiety_vs_no_psych_lm, anova)
+
+#uncorrected
+#Pull p-values
+p_anova <- as.data.frame(sapply(anxiety_vs_no_psych_lm_anova, function(v) v$"Pr(>F)"[1]) )
+
+#extract values that are significant
+p_anova_unc <- as.data.frame(cbind(row.names(p_anova)[p_anova < 0.05], p_anova[p_anova <0.05]))
+
+#print BEFORE FDR correction 
+print(p_anova_unc)
+
+
+#fdr corrected
+anxiety_vs_no_psych_lm_anova_fdr <- fdr_anova_generic(anxiety_vs_no_psych_lm_anova, 1)
+print(anxiety_vs_no_psych_lm_anova_fdr)
+
+
+## yeo
+#lm
+anxiety_vs_no_psych_lm_yeo <- lapply(yeo_network_names, function(x) 
+{
+  lm(substitute(i ~ anxietyGroupVar, list(i = as.name(x))), data = anxiety_vs_no_psych)
+})
+names(anxiety_vs_no_psych_lm_yeo) <- yeo_network_names
+
+anxiety_vs_no_psych_yeo_anova <- lapply(anxiety_vs_no_psych_lm_yeo, anova)
+
+#uncorrected
+#Pull p-values
+p_anova <- as.data.frame(sapply(anxiety_vs_no_psych_yeo_anova, function(v) v$"Pr(>F)"[1]) )
+
+
+#extract values that are significant
+p_anova_unc <- as.data.frame(cbind(row.names(p_anova)[p_anova < 0.05], p_anova[p_anova <0.05]))
+
+#print BEFORE FDR correction 
+print(p_anova_unc)
+
+
+
+
+#fdr corrected
+anxiety_vs_no_psych_yeo_anova_fdr <- fdr_anova_generic(anxiety_vs_no_psych_yeo_anova, 1)
+print(anxiety_vs_no_psych_yeo_anova_fdr)
+
+
+
+```
+
+### Send anxiety groups to HYDRA (diagnosis only, no on meds)
+```{r anxiety_group_prep_for_hydra}
+### remake data frame from above
+
+
+anxiety_vs_no_psych <- df_demo_and_fascicles %>%
+  mutate(anxietyGroupVar = ifelse(Has.anxietydx, 2, ifelse(healthy_ish, 1, 0))) %>% #complicated, if they have an anxiety disorder, they get a 2, if they are health-ish, no psych dx or meds, 1, otherwise, exclude
+  filter(anxietyGroupVar != 0) %>% #get rid of the people who are not anxious and not healthy_ish, n =643, lost n=169
+  filter(is.na(depGroupVar)) %>% #exclude people with depression (87 have both depression and anxiety), n = 557, anxiety = 101, nonanxious = 456)
+  mutate(anxietyHydraVar = ifelse(anxietyGroupVar == 2, 1, -1)) %>%
+  group_by(EMPI) %>%
+  arrange(EXAM_DATE) %>%
+  slice(1) %>%
+  ungroup
+
+#pull out EMPI, proportion, and anxiety group var
+anxiety_vs_no_psych_features_for_hydra <- anxiety_vs_no_psych %>%
+  dplyr::select(EMPI, fascicle_names_w_prop_suffix, anxietyHydraVar)
+
+write.csv(file=paste0(homedir, "/hydra/data/Features_ms_fascicle_dysconnectome_anxiety_prop.csv"),x=anxiety_vs_no_psych_features_for_hydra, quote = F, row.names = F)
+
+#pull out age, age + sex covariates
+anxiety_age <- anxiety_vs_no_psych %>%
+  dplyr::select(EMPI, PAT_AGE_AT_EXAM)
+
+write.csv(file=paste0(homedir, "/hydra/data/Covariates_age.csv"),x=anxiety_age, quote = F, row.names = F)
+
+anxiety_age_and_sex <- anxiety_vs_no_psych %>%
+  dplyr::select(EMPI, PAT_AGE_AT_EXAM, sex_binarized)
+
+write.csv(file=paste0(homedir, "/hydra/data/Covariates_age_and_sex.csv"),x=anxiety_age_and_sex, quote = F, row.names = F)
+
+#pull out yeo proportions
+anxiety_vs_no_psych_yeo_features_for_hydra <- anxiety_vs_no_psych %>%
+  dplyr::select(EMPI, yeo_network_names_prop, anxietyHydraVar)
+
+write.csv(file=paste0(homedir, "/hydra/data/Features_ms_fascicle_dysconnectome_anxiety_yeo_prop.csv"),x=anxiety_vs_no_psych_yeo_features_for_hydra, quote = F, row.names = F)
 
 
 ```
