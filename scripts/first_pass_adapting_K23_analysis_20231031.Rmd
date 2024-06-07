@@ -339,13 +339,15 @@ df_demo_and_fascicles <- df_w_yeo_volume_info_with_prop_of_network %>%
 ```{r read_in_neurosynth_anxiety_network}
 neurosynth_anxiety_network_fascicle_overlap <- read.csv("/Users/eballer/BBL/msanxiety/results/streamline_volume_within_anxiety_network_association_neuro_maps_FDR_01.csv", header = T, sep = ",") %>% 
   filter(fascicle %in% fascicle_names_no_cranial_nerves) %>%
-  slice(order(factor(fascicle, levels = fascicle_names_no_cranial_nerves))) #get rid of cranial nerves up front
+  slice(order(factor(fascicle, levels = fascicle_names_no_cranial_nerves))) %>% #get rid of cranial nerves up front 
+  replace(is.na(.), 0)
 
 fascicles_with_any_anxiety_overlap <- neurosynth_anxiety_network_fascicle_overlap %>%
-  filter(!is.na(prop_in_mask))  #n = 43
+  filter(prop_in_mask > 0)  #n = 43
 
 #top 25% 
-number_of_brain_regions_in_top_25 <- round((dim(fascicles_with_any_anxiety_overlap)[1]/4)) #n=11
+#number_of_brain_regions_in_top_25 <- round((dim(fascicles_with_any_anxiety_overlap)[1]/4)) #n=11
+number_of_brain_regions_in_top_25 <- round((dim(neurosynth_anxiety_network_fascicle_overlap)[1]/4)) #n=19
 
 fascicles_with_vol_top_25_percent_anxiety_overlap <- neurosynth_anxiety_network_fascicle_overlap %>%
   filter(!is.na(prop_in_mask)) %>%
@@ -361,11 +363,11 @@ fascicles_with_prop_top_25_percent_anxiety_overlap <- neurosynth_anxiety_network
 #name vectors to use later
 fascicle_names_any_anxiety_overlap_vol <- fascicles_with_any_anxiety_overlap$fascicle 
 fascicle_names_top_25_vol <- fascicles_with_vol_top_25_percent_anxiety_overlap$fascicle 
-fascicle_names_bottom_75_vol <- fascicles_with_any_anxiety_overlap %>% filter(!(fascicle %in% fascicle_names_top_25_vol)) %>% pull(fascicle)
+fascicle_names_bottom_75_vol <- neurosynth_anxiety_network_fascicle_overlap %>% filter(!(fascicle %in% fascicle_names_top_25_vol)) %>% pull(fascicle)
 
 fascicle_names_any_anxiety_overlap_prop <- fascicles_with_any_anxiety_overlap$fascicle
 fascicle_names_top_25_prop <-fascicles_with_prop_top_25_percent_anxiety_overlap$fascicle 
-fascicle_names_bottom_75_prop <- fascicles_with_any_anxiety_overlap %>% filter(!(fascicle %in% fascicle_names_top_25_prop)) %>% pull(fascicle)
+fascicle_names_bottom_75_prop <- neurosynth_anxiety_network_fascicle_overlap %>% filter(!(fascicle %in% fascicle_names_top_25_prop)) %>% pull(fascicle)
 
 ##add vol/prop
 fascicle_names_any_anxiety_overlap_vol_w_suff <- fascicle_names_any_anxiety_overlap_vol %>% gsub(pattern = "(.*)", replacement = "\\1_vol", perl=TRUE)
@@ -381,7 +383,7 @@ fascicle_names_bottom_75_prop_w_suff <- fascicle_names_bottom_75_prop %>% gsub(p
 total_fascicle_volume <- sum(neurosynth_anxiety_network_fascicle_overlap$num_voxels_total)
 any_anxiety_overlap_total_volume <- sum(fascicles_with_any_anxiety_overlap$num_voxels_total) # vol = 1093606
 top_25_total_volume <-sum(fascicles_with_vol_top_25_percent_anxiety_overlap$num_voxels_total) # vol = 548305
-bottom_75_total_volume <- sum(fascicles_with_any_anxiety_overlap$num_voxels_total[fascicles_with_any_anxiety_overlap$fascicle %in% fascicle_names_bottom_75_vol]) #vol = 548305
+bottom_75_total_volume <- sum(neurosynth_anxiety_network_fascicle_overlap$num_voxels_total[neurosynth_anxiety_network_fascicle_overlap$fascicle %in% fascicle_names_bottom_75_vol]) #vol = 548305
 
 ```
 
@@ -442,18 +444,31 @@ df_empi_dx_network_proportions <- df_demo_and_fascicles %>%
 hist(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Network == "Anxiety_network"])
 hist(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Network == "Nonanxiety_network"])
 
+#t test, t = 63.621, df = 718, p-value < 2.2e-16; 95 percent confidence interval:0.2349467 0.2499088, mean diff: 0.2424277 
 within_vs_outside_anxiety_net_t <- t.test(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Network == "Anxiety_network"], df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Network == "Nonanxiety_network"], paired = T)
 summary(within_vs_outside_anxiety_net_t)
 
- #simple lmer, confirms T
+ #simple lmer, confirms T; -63.62   <2e-16 ***
 disease_within_vs_outside_anxiety_net_lmer <- lmer(proportion_affected ~ Network + (1|subject), data = df_empi_dx_network_proportions)
 summary(disease_within_vs_outside_anxiety_net_lmer)
 
-#diagnosis: Anxiety > nonanxiety T = 2.4, p = 0.015; Network dep>nondep = T=12.4, p = 2*10^-16; intx = T = 2.3, p = 0.020
+ #Net by sex, confirms T; -63.62   <2e-16, but no sex differences (p=0.179)
+disease_within_vs_outside_anxiety_net_sex_lmer <- lmer(proportion_affected ~ Network +osex + (1|subject), data = df_empi_dx_network_proportions)
+summary(disease_within_vs_outside_anxiety_net_sex_lmer)
+
+ #simple lmer, confirms network: -63.621  < 2e-16 , Pat age: 6.338 4.12e-10
+disease_within_vs_outside_anxiety_net_age_lmer <- lmer(proportion_affected ~ Network + PAT_AGE_AT_EXAM + (1|subject), data = df_empi_dx_network_proportions)
+summary(disease_within_vs_outside_anxiety_net_age_lmer)
+
+#Age * network interaction, don't know if this is valid at all. outside > w/in net: -12.718  < 2e-16 ***; pat age = 6.837  1.6e-11 ***, NetworkNonanxiety_network:PAT_AGE_AT_EXAM -2.852  0.00447 
+disease_within_vs_outside_anxiety_net_age_intx_lmer <- lmer(proportion_affected ~ Network*PAT_AGE_AT_EXAM + (1|subject), data = df_empi_dx_network_proportions)
+summary(disease_within_vs_outside_anxiety_net_age_intx_lmer)
+
+#diagnosis: NS
 diagnosis_by_network_interaction_lmer <- lmer(proportion_affected ~ Diagnosis*Network + (1|subject), data = df_empi_dx_network_proportions)
 summary(diagnosis_by_network_interaction_lmer)
 
-#Diagnosis: MS+ > MS- 0.011-0.1; Network dep>nondep -.104--.076; intx: -0.040--0.003
+#Diagnosis: NS
 confint(diagnosis_by_network_interaction_lmer)
 
 ```
