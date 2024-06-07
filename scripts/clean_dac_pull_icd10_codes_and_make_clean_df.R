@@ -134,12 +134,11 @@ data_final_rds <-data_pull %>%
   mutate(On.Interferon = ifelse(str_detect(Medication, paste(msmeds$Medication[msmeds$Mechanism == "Interferon"], collapse = "|")), 1, 0)) %>%
   mutate(On.Steroids = ifelse(str_detect(Medication, paste(msmeds$Medication[msmeds$Mechanism == "Steroid"], collapse = "|")), 1, 0)) %>%
   mutate(On.Dmt = ifelse(str_detect(Medication, paste(msmeds$Medication[msmeds$DMT == "y"], collapse = "|")), 1, 0)) %>%
-  mutate(Has.PHQ2 = ifelse(PHQ.2 != "NULL", 1, 0)) %>%
-  mutate(Has.PHQ9 = ifelse(PHQ.9 != "NULL", 1, 0)) %>%
+  mutate(Has.PHQ2 = ifelse((PHQ.2 != "NULL" & !is.na(PHQ.2)), 1, 0)) %>%
+  mutate(Has.PHQ9 = ifelse((PHQ.9 != "NULL" & !is.na(PHQ.9)), 1, 0)) %>%
   mutate(Has.depdx = ifelse(grepl("F3[2:4]", all_icd10_dx), 1, 0)) %>%
   mutate(Has.anxietydx = ifelse(grepl("F4", all_icd10_dx), 1, 0)) %>%
   mutate(Has.CannabisUsedx = ifelse(grepl("F12", all_icd10_dx), 1, 0)) %>%
-  mutate(Has.depANDanx.dx = ifelse(Has.depdx & Has.anxietydx, 1, 0)) %>%
   mutate(Has.Anxietydx.Or.Antianxietymed = ifelse(Has.anxietydx | On.Anxiolytics,1,0)) %>%
   mutate(PHQ.2_modsev_dep_sxs = ifelse(Has.PHQ2 & PHQ.2 >= 3, 1, 0)) %>%
   mutate(PHQ.9_modsev_dep_sxs = ifelse(Has.PHQ9 & PHQ.9 >= 10, 1, 0)) %>%
@@ -156,8 +155,13 @@ data_final_rds <-data_pull %>%
   rowwise(ACCESSION_NUM) %>%
   mutate(depGroupVar =
            sum(c(dep_by_dx_phq_meds_healthy_phq0_no_psych_meds,dep_by_dx_phq_antidep))) %>%#you get an extra point if you are in the depression group, so the end result is dep = 2, healthy = 1, 0 for exclude
+  mutate(anxietyGroupVar = ifelse((Has.anxietydx | On.Anxiolytics_no_beta_blocker), 2, ifelse(healthy_ish, 1, 0))) %>%
+  mutate(Has.Anxiety.No.Depression = ifelse((anxietyGroupVar == 2 & depGroupVar != 2), 1, 0)) %>%
+  mutate(Has.Depression.No.Anxiety = ifelse((anxietyGroupVar != 2 & depGroupVar == 2), 1, 0)) %>%
+  mutate(Has.Depression.And.Anxiety = ifelse((anxietyGroupVar == 2 & depGroupVar == 2), 1, 0)) %>%
   ungroup() #n=3,737 unique people, n= 16,830 total
 
 
 saveRDS(data_final_rds, file = output_file)
+
 

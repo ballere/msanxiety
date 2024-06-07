@@ -153,8 +153,43 @@ df_demo_and_fascicles <- df_people_with_good_mimosa %>%
 
 ```
 
+## Read in lesion volume size
+```{r read_in_lesion_volumes}
+##########################################################
+#             Read in Lesion Volumes                     #
+##########################################################
 
+# contains the volume of lesioned voxels, i.e. a sum of all the areas of each individual's binary mask that are 1
+
+lesion_volumes <- read.csv("/Users/eballer/BBL/msdepression/results/mimosa_binary_masks_hcp_space_20211026_n2336_volumes", sep = ",", header = TRUE) #n=958 unique, identical to fascicle unique
+lesion_volumes <- lesion_volumes %>%
+  mutate(EMPI = as.character(EMPI)) %>%
+  mutate(EXAM_DATE = as.character(EXAM_DATE))
+
+```
+
+## Merge with data frame with good mimosas
+```{r merge_lesion_volume_w_mimosa_df}
+##########################################################
+#             Merge lesion volumes with mimosa df        #
+##########################################################
+#merge whole data set with fascicle proportions, n = 812
+df_demo_and_fascicles <- df_demo_and_fascicles %>%
+  left_join(lesion_volumes, by = c("EMPI", "EXAM_DATE")) 
+
+
+```
+
+## Make separate columns for proportional injury (prop), total volume injury (vol)
 ```{r add_suffix_to_each_measure}
+
+########################################
+## Read in Fiber Volume Values        ##
+########################################
+
+#read in fiber volume values
+fiber_volume_values <- read.csv("/Users/eballer/BBL/msdepression/templates/dti/HCP_YA1065_tractography/fiber_volume_values.csv", sep=",", header = T)
+
 
 #########################################
 ## Get vectors with names of fascicles ##
@@ -171,14 +206,10 @@ fascicle_names_w_vol_suffix <- gsub(pattern = "(.*)", replacement = "\\1_vol", p
 #write.table(fascicle_names,"/Users/eballer/BBL/msdepression/templates/dti/HCP_YA1065_tractography/fascicle_names.csv", row.names = F, quote = F, col.names = F)
 
 
-#read in volumes of fascicles and make columns reflecting volume of disease injured per fascicle
-
 ##########################################################
 #  Add columns for volume and change proportion names    #
 ##########################################################
 
-#read in fiber volume values
-fiber_volume_values <- read.csv("/Users/eballer/BBL/msdepression/templates/dti/HCP_YA1065_tractography/fiber_volume_values.csv", sep=",", header = T)
 
 #remove cranial nerves
 fiber_volume_values_no_cranial_nerves <- fiber_volume_values %>% filter(fascicle %in% fascicle_names_no_cranial_nerves) %>%
@@ -303,20 +334,138 @@ df_demo_and_fascicles <- df_w_yeo_volume_info_with_prop_of_network %>%
   
 
 ```
+##Anxiety Network from neurosynth (association, not uniformity)
+###read in file with fasciclexanxiety overlap, and define anxiety network
+```{r read_in_neurosynth_anxiety_network}
+neurosynth_anxiety_network_fascicle_overlap <- read.csv("/Users/eballer/BBL/msanxiety/results/streamline_volume_within_anxiety_network_association_neuro_maps_FDR_01.csv", header = T, sep = ",") %>% 
+  filter(fascicle %in% fascicle_names_no_cranial_nerves) %>%
+  slice(order(factor(fascicle, levels = fascicle_names_no_cranial_nerves))) #get rid of cranial nerves up front
+
+fascicles_with_any_anxiety_overlap <- neurosynth_anxiety_network_fascicle_overlap %>%
+  filter(!is.na(prop_in_mask))  #n = 43
+
+#top 25% 
+number_of_brain_regions_in_top_25 <- round((dim(fascicles_with_any_anxiety_overlap)[1]/4)) #n=11
+
+fascicles_with_vol_top_25_percent_anxiety_overlap <- neurosynth_anxiety_network_fascicle_overlap %>%
+  filter(!is.na(prop_in_mask)) %>%
+  arrange(desc(non_zero_voxels_in_anxiety_map)) %>%
+  slice(1:number_of_brain_regions_in_top_25)
+  
+fascicles_with_prop_top_25_percent_anxiety_overlap <- neurosynth_anxiety_network_fascicle_overlap %>%
+  filter(!is.na(prop_in_mask)) %>%
+  arrange(desc(prop_in_mask)) %>%
+  slice(1:number_of_brain_regions_in_top_25)
 
 
-#summarize means across all fascicles
-```{r make_summary_measures_of_fascicle_burden}
+#name vectors to use later
+fascicle_names_any_anxiety_overlap_vol <- fascicles_with_any_anxiety_overlap$fascicle 
+fascicle_names_top_25_vol <- fascicles_with_vol_top_25_percent_anxiety_overlap$fascicle 
+fascicle_names_bottom_75_vol <- fascicles_with_any_anxiety_overlap %>% filter(!(fascicle %in% fascicle_names_top_25_vol)) %>% pull(fascicle)
 
-#n=812
-df_demo_and_fascicles <- df_demo_and_fascicles %>%
-  mutate(total_fascicle_prop_lost_no_cranial_nerves = rowMeans(across(all_of(fascicle_names_w_prop_suffix)))) %>%
-  mutate(total_fascicle_volume_lost_no_cranial_nerves = rowMeans(across(all_of(fascicle_names_w_vol_suffix))))
+fascicle_names_any_anxiety_overlap_prop <- fascicles_with_any_anxiety_overlap$fascicle
+fascicle_names_top_25_prop <-fascicles_with_prop_top_25_percent_anxiety_overlap$fascicle 
+fascicle_names_bottom_75_prop <- fascicles_with_any_anxiety_overlap %>% filter(!(fascicle %in% fascicle_names_top_25_prop)) %>% pull(fascicle)
+
+##add vol/prop
+fascicle_names_any_anxiety_overlap_vol_w_suff <- fascicle_names_any_anxiety_overlap_vol %>% gsub(pattern = "(.*)", replacement = "\\1_vol", perl=TRUE)
+fascicle_names_top_25_vol_w_suff <- fascicle_names_top_25_vol %>% gsub(pattern = "(.*)", replacement = "\\1_vol", perl=TRUE)
+fascicle_names_bottom_75_vol_w_suff <- fascicle_names_bottom_75_vol  %>% gsub(pattern = "(.*)", replacement = "\\1_vol", perl=TRUE) #take fascicles not in 
+
+fascicle_names_any_anxiety_overlap_prop_w_suff <- fascicle_names_any_anxiety_overlap_prop %>% gsub(pattern = "(.*)", replacement = "\\1_prop", perl=TRUE)
+fascicle_names_top_25_prop_w_suff <- fascicle_names_top_25_prop %>% gsub(pattern = "(.*)", replacement = "\\1_prop", perl=TRUE)
+fascicle_names_bottom_75_prop_w_suff <- fascicle_names_bottom_75_prop %>% gsub(pattern = "(.*)", replacement = "\\1_prop", perl=TRUE) 
+
+
+# Total volume of injury within each anxiety network, double checked that : top_25_total_volume + bottom_75_total_volume
+total_fascicle_volume <- sum(neurosynth_anxiety_network_fascicle_overlap$num_voxels_total)
+any_anxiety_overlap_total_volume <- sum(fascicles_with_any_anxiety_overlap$num_voxels_total) # vol = 1093606
+top_25_total_volume <-sum(fascicles_with_vol_top_25_percent_anxiety_overlap$num_voxels_total) # vol = 548305
+bottom_75_total_volume <- sum(fascicles_with_any_anxiety_overlap$num_voxels_total[fascicles_with_any_anxiety_overlap$fascicle %in% fascicle_names_bottom_75_vol]) #vol = 548305
+
 ```
 
-#Compare disease burden by anxiety comorbidity
+###Add columns in the main data frame indicating overall injury in the whole network, in the top 25 network (vol and prop), and bottom 75%
+```{r add_anxiety_network_details_to_data_frame}
+
+#all of this has been checked - making sure prop * vol network = sum of damage
+
+df_demo_and_fascicles <- df_demo_and_fascicles %>%
+  
+  
+  mutate(mean_fascicle_prop_lost_no_cranial_nerves = rowMeans(across(all_of(fascicle_names_w_prop_suffix)))) %>%
+  mutate(mean_fascicle_volume_lost_no_cranial_nerves = rowMeans(across(all_of(fascicle_names_w_vol_suffix)))) %>%
+
+  #sum of total volume lost and proportion of volume lost 
+  mutate(sum_fascicle_vol_lost = rowSums(across(all_of(fascicle_names_w_vol_suffix)))) %>%
+  mutate(proportion_volume_lost_per_total_network_size_sum = sum_fascicle_vol_lost/total_fascicle_volume) %>%
+  
+  #sum of total volume lost in anxiety network and proportion of volume lost in anxietyn network (volume lost/network volume size) 
+  mutate(sum_fascicle_vol_lost_inanxietynet_all = 
+           rowSums(across(all_of(fascicle_names_any_anxiety_overlap_vol_w_suff)))) %>%
+  mutate(proportion_volume_lost_anxiety_net_by_network_size_sum = sum_fascicle_vol_lost_inanxietynet_all/any_anxiety_overlap_total_volume) %>%
+ 
+  
+  #sum of total volume lost in anxiety network and proportion of volume lost in anxiety network (volume lost/network volume size) 
+  mutate(sum_fascicle_vol_lost_inanxietynet_top_quartile = 
+           rowSums(across(all_of(fascicle_names_top_25_vol_w_suff)))) %>%
+  mutate(proportion_volume_lost_anxiety_net_by_network_size_sum_top_25 = sum_fascicle_vol_lost_inanxietynet_top_quartile/top_25_total_volume) %>%
+ 
+  #sum of total volume lost in nonanxiety network and proportion of volume lost in anxiety network (volume lost/network volume size) 
+  mutate(sum_fascicle_vol_lost_nonanxiety_net_bottom_3_quartiles = 
+           rowSums(across(all_of(fascicle_names_bottom_75_vol_w_suff)))) %>%
+  mutate(proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75 = sum_fascicle_vol_lost_nonanxiety_net_bottom_3_quartiles/bottom_75_total_volume) %>%
+
+  ungroup()   
+
+#neurosynth_anxiety_network_fascicle_overlap
+```
+
+## Anxiety within/outside network interaction
+```{r anxiety_net_intx}
+
+#clean up data frame
+df_empi_dx_network_proportions <- df_demo_and_fascicles %>%
+  filter(anxietyGroupVar != 0) %>% #lose 93, n now 719
+  mutate(subject = as.factor(EMPI)) %>%
+  mutate(Diagnosis = ifelse(anxietyGroupVar==1, "MS-Anxiety", "MS+Anxiety")) %>%
+  mutate(Diagnosis = as.factor(Diagnosis)) %>%
+  mutate(Anxiety_network = proportion_volume_lost_anxiety_net_by_network_size_sum_top_25) %>%
+  mutate(Nonanxiety_network = proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75) %>%
+  dplyr::select(subject, osex, Diagnosis, Anxiety_network, Nonanxiety_network, PAT_AGE_AT_EXAM) %>% 
+  gather(Network, proportion_affected, -subject, -Diagnosis, -PAT_AGE_AT_EXAM, -osex) %>% #this is like a melt. Keeps empi and depGroupVar out of the melt
+  mutate(Network = as.factor(Network)) %>%
+  ungroup()
+ 
+#simple t test, disease within versus outside anxiety network; mean within anxiety net: 0.5426694 affected, mean outside anxiety network = 0.3062429, T=57.44, p<2.2*10^-16, 95% CI 0.22-0.24
+
+hist(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Network == "Anxiety_network"])
+hist(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Network == "Nonanxiety_network"])
+
+within_vs_outside_anxiety_net_t <- t.test(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Network == "Anxiety_network"], df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Network == "Nonanxiety_network"], paired = T)
+summary(within_vs_outside_anxiety_net_t)
+
+ #simple lmer, confirms T
+disease_within_vs_outside_anxiety_net_lmer <- lmer(proportion_affected ~ Network + (1|subject), data = df_empi_dx_network_proportions)
+summary(disease_within_vs_outside_anxiety_net_lmer)
+
+#diagnosis: Anxiety > nonanxiety T = 2.4, p = 0.015; Network dep>nondep = T=12.4, p = 2*10^-16; intx = T = 2.3, p = 0.020
+diagnosis_by_network_interaction_lmer <- lmer(proportion_affected ~ Diagnosis*Network + (1|subject), data = df_empi_dx_network_proportions)
+summary(diagnosis_by_network_interaction_lmer)
+
+#Diagnosis: MS+ > MS- 0.011-0.1; Network dep>nondep -.104--.076; intx: -0.040--0.003
+confint(diagnosis_by_network_interaction_lmer)
+
+```
+# Compare anxiety burden (presence of condition, number of anxiety comorbidities) by fascicle, by overall injury, and by volume of lesions
+```{r compare_anxiety_burden_by_fascicle_injury_lesion_volume}
+
+```
+
+## Compare disease burden by anxiety comorbidity by fascicle
 ```{r compare_disease_burden_by_anxiety_comorbidity}
 
+#### in each fascicle
 #lm
 fascicle_number_of_anxiety_dx_lm <- lapply(fascicle_names_w_prop_suffix, function(x) 
 {
@@ -344,7 +493,10 @@ print(fascicle_number_of_anxiety_dx_anova_fdr)
 yeo_lim_no_anxiety <- lm(LIM~number_of_anxiety_comorbidities_extended, data = df_demo_and_fascicles) #nothing
 
 ```
-#Has depression AND anxiety diagnoses
+
+
+
+## Has depression AND anxiety diagnoses
 ```{r compare_disease_burden_by_dep_AND_anxiety_comorbidity}
 
 #lm
@@ -492,15 +644,18 @@ print(p_anova_unc)
 anxiety_vs_no_psych_yeo_anova_fdr <- fdr_anova_generic(anxiety_vs_no_psych_yeo_anova, 1)
 print(anxiety_vs_no_psych_yeo_anova_fdr)
 
+### total lesion burden
 
+### lesion volume
 
 ```
 ### Run analysis again but include in anxiety group people on anti-anxiety meds
 ```{r anxiety_oranxiety_meds_vs_healthy_ish}
 
 anxiety_vs_no_psych <- df_demo_and_fascicles %>%
-  mutate(anxietyGroupVar = ifelse((Has.anxietydx | On.Anxiolytics_no_beta_blocker), 2, ifelse(healthy_ish, 1, 0))) %>% #complicated, if they have an anxiety disorder, they get a 2, if they are health-ish, no psych dx or meds, 1, otherwise, exclude
-  filter(anxietyGroupVar != 0) %>% #get rid of the people who are not anxious and not healthy_ish, n =643, lost n=169
+  mutate(anxietyGroupVar = ifelse((Has.anxietydx | On.Anxiolytics_no_beta_blocker), 2, ifelse(healthy_ish, 1, 0))) %>% #complicated, if they have an anxiety disorder, they get a 2, if they are health-ish, no psych dx or meds, 1, otherwise, exclude; n anxiety = 271, healthyish = 448, unclassified = 93
+  mutate(anxietyGroupVar_ordered = ordered(anxietyGroupVar,levels = c(0,1,2), labels = c("unclassified", "healthyish", "anxiety"))) %>%
+  filter(anxietyGroupVar_ordered != "unclassified") %>% #get rid of the people who are not anxious and not healthy_ish, n =541, lost n=93
   filter(is.na(depGroupVar)) %>% #exclude people with depression (87 have both depression and anxiety), n = 557, anxiety = 101, nonanxious = 456)
   group_by(EMPI) %>%
   arrange(EXAM_DATE) %>%
@@ -562,6 +717,23 @@ anxiety_vs_no_psych_yeo_anova_fdr <- fdr_anova_generic(anxiety_vs_no_psych_yeo_a
 print(anxiety_vs_no_psych_yeo_anova_fdr)
 
 
+
+```
+
+## Compare total disease burden and lesion volume by anxiety comorbidity
+```{r total_burden_and_lesion_volume_by_anxiety_comorbdity}
+
+total_burden_by_anxietydx_lm <- lm(anxietyGroupVar~total_fascicle_volume_lost_no_cranial_nerves, data = anxiety_vs_no_psych)
+print(summary(total_burden_by_anxietydx_lm))
+
+total_burden_by_anxiety_lm <- lm(number_of_anxiety_comorbidities_extended~total_fascicle_volume_lost_no_cranial_nerves, data = anxiety_vs_no_psych)
+print(summary(total_burden_by_anxiety_lm))
+
+total_lesion_volume_by_anxietydx_lm <- lm(anxietyGroupVar ~volume_of_mimosa_lesions, data = anxiety_vs_no_psych)
+print(summary(total_lesion_volume_by_anxietydx_lm))
+
+total_lesion_volume_by_anxiety_lm <- lm(number_of_anxiety_comorbidities_extended ~volume_of_mimosa_lesions, data = anxiety_vs_no_psych)
+print(summary(total_lesion_volume_by_anxiety_lm))
 
 ```
 
