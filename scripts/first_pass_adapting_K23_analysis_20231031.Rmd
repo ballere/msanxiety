@@ -57,12 +57,12 @@ Imaging exclusion
   We are currently only using people who had good MIMOSA (75 or 100). That severely limits our numbers, but that is okay! When we re-QC, we will probably get a lot more into this group.
 
 Final N demographics 
-  Anxious: 
-  Super clean healthy: 604 (148 unique)
+
   
 (unique, with good MIMoSA):
 
 
+#findings
 
 
 ```{r read_in_df}
@@ -387,8 +387,61 @@ bottom_75_total_volume <- sum(neurosynth_anxiety_network_fascicle_overlap$num_vo
 
 ```
 
+### Get dep network data
+```{r depression_network_injury}
+#take depression network from the BP paper, and find names of fascicles in each group
+
+#read in depression network overlap by volume data frame
+dep_net_overlap_from_bp_paper <- read.csv("/Users/eballer/BBL/msdepression/results/df_fascicles_sorted_by_volume_in_mask_for_eTable3.csv", sep = ",", header = TRUE)
+
+dep_net_top_25_percent <- dep_net_overlap_from_bp_paper$fascicle[1:round((dim(dep_net_overlap_from_bp_paper)[1]/4),0)]
+dep_net_top_25_percent_w_suff <- dep_net_top_25_percent %>% gsub(pattern = "(.*)", replacement = "\\1_vol", perl=TRUE)
+
+top_25_total_volume_dep <- sum(dep_net_overlap_from_bp_paper$num_voxels_total[1:round((dim(dep_net_overlap_from_bp_paper)[1]/4),0)])
+
+nondep_net_bottom_75_percent <- dep_net_overlap_from_bp_paper$fascicle[(round(dim(dep_net_overlap_from_bp_paper)[1]/4,0) +1):dim(dep_net_overlap_from_bp_paper)[1]]
+nondep_net_bottom_75_percent_w_suff <- nondep_net_bottom_75_percent %>%gsub(pattern = "(.*)", replacement = "\\1_vol", perl=TRUE)
+
+bottom_75_total_volume_nondep <- sum(dep_net_overlap_from_bp_paper$non_zero_voxels_in_dep_map[(round(dim(dep_net_overlap_from_bp_paper)[1]/4,0) +1):dim(dep_net_overlap_from_bp_paper)[1]])
+
+```
+
+### find names of fascicles in anxiety + dep network, unique to dep net, and unique to anxiety net
+```{r find_names_and_overlaps_of_dep_and_anxiety_networks}
+
+#I want to figure out what the volume is in all voxels within the overlap of depression and anxiety network, as well as within the nonoverlapping networks
+#the depression net overlap from bp paper contains a colum (num_voxels_total) that has the full voxel sizes of all of the fascicles. Will use this to help find the "total volume size"
+
+#total volume = 1545449
+#checked to make sure that dep_only_net_vol + anxiety_only_net_vol + dep_and_anxiety_net_overlap_net_volume = dep_and_anxiety_net_unique_net_volume
+
+dep_and_anxiety_combined <- c(fascicle_names_top_25_vol, dep_net_top_25_percent) #n = 38
+
+dep_and_anxiety_net_unique_names <- dep_and_anxiety_combined %>% unique() #n=34
+dep_and_anxiety_net_unique_net_volume <- sum(dep_net_overlap_from_bp_paper$num_voxels_total[dep_net_overlap_from_bp_paper$fascicle %in% dep_and_anxiety_net_unique_names]) #vol = 1048643
+
+dep_and_anxiety_net_overlap_names <- dep_and_anxiety_combined[dep_and_anxiety_combined %>% duplicated()] #n=4
+dep_and_anxiety_net_overlap_net_volume <- sum(dep_net_overlap_from_bp_paper$num_voxels_total[dep_net_overlap_from_bp_paper$fascicle %in% dep_and_anxiety_net_overlap_names]) #vol = 486260
+
+
+dep_only_names <- dep_and_anxiety_net_unique_names[!(dep_and_anxiety_net_unique_names %in% fascicle_names_top_25_vol)] #n=15
+dep_only_net_vol <- sum(dep_net_overlap_from_bp_paper$num_voxels_total[dep_net_overlap_from_bp_paper$fascicle %in% dep_only_names]) #vol = 370747
+
+anxiety_only_names <-dep_and_anxiety_net_unique_names[!(dep_and_anxiety_net_unique_names %in% dep_net_top_25_percent)] #n=15
+anxiety_only_net_vol <- sum(dep_net_overlap_from_bp_paper$num_voxels_total[dep_net_overlap_from_bp_paper$fascicle %in% anxiety_only_names]) #vol = 191636
+
+### add suffix
+dep_and_anxiety_net_unique_names_w_suff <- dep_and_anxiety_net_unique_names  %>% gsub(pattern = "(.*)", replacement = "\\1_vol", perl=TRUE) #take fascicles not in 
+
+dep_and_anxiety_net_overlap_names_w_suff <- dep_and_anxiety_net_overlap_names %>% gsub(pattern = "(.*)", replacement = "\\1_vol", perl=TRUE) #take fascicles not in 
+
+dep_only_names_w_suff <- dep_only_names %>% gsub(pattern = "(.*)", replacement = "\\1_vol", perl=TRUE) #take fascicles not in 
+
+anxiety_only_names_w_suff <- anxiety_only_names %>% gsub(pattern = "(.*)", replacement = "\\1_vol", perl=TRUE) #take fascicles not in 
+```
+
 ###Add columns in the main data frame indicating overall injury in the whole network, in the top 25 network (vol and prop), and bottom 75%
-```{r add_anxiety_network_details_to_data_frame}
+```{r add_anxiety_and_dep_network_details_to_data_frame}
 
 #all of this has been checked - making sure prop * vol network = sum of damage
 
@@ -402,22 +455,52 @@ df_demo_and_fascicles <- df_demo_and_fascicles %>%
   mutate(sum_fascicle_vol_lost = rowSums(across(all_of(fascicle_names_w_vol_suffix)))) %>%
   mutate(proportion_volume_lost_per_total_network_size_sum = sum_fascicle_vol_lost/total_fascicle_volume) %>%
   
-  #sum of total volume lost in anxiety network and proportion of volume lost in anxietyn network (volume lost/network volume size) 
+  #sum of total volume lost in anxiety network and proportion of volume lost in anxiety network (volume lost/network volume size) 
   mutate(sum_fascicle_vol_lost_inanxietynet_all = 
            rowSums(across(all_of(fascicle_names_any_anxiety_overlap_vol_w_suff)))) %>%
   mutate(proportion_volume_lost_anxiety_net_by_network_size_sum = sum_fascicle_vol_lost_inanxietynet_all/any_anxiety_overlap_total_volume) %>%
  
   
-  #sum of total volume lost in anxiety network and proportion of volume lost in anxiety network (volume lost/network volume size) 
+  #sum of total volume lost in anxiety network and proportion of volume lost in anxiety network (volume lost/network volume size) top quartile
   mutate(sum_fascicle_vol_lost_inanxietynet_top_quartile = 
            rowSums(across(all_of(fascicle_names_top_25_vol_w_suff)))) %>%
   mutate(proportion_volume_lost_anxiety_net_by_network_size_sum_top_25 = sum_fascicle_vol_lost_inanxietynet_top_quartile/top_25_total_volume) %>%
  
-  #sum of total volume lost in nonanxiety network and proportion of volume lost in anxiety network (volume lost/network volume size) 
+  #sum of total volume lost in nonanxiety network and proportion of volume lost in anxiety network (volume lost/network volume size) bottom 3 quartiles
   mutate(sum_fascicle_vol_lost_nonanxiety_net_bottom_3_quartiles = 
            rowSums(across(all_of(fascicle_names_bottom_75_vol_w_suff)))) %>%
   mutate(proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75 = sum_fascicle_vol_lost_nonanxiety_net_bottom_3_quartiles/bottom_75_total_volume) %>%
+  
+  ##sum of total volume lost in depression network and proportion of volume lost in depression network (volume lost/network volume size) top quartile
+  mutate(sum_fascicle_vol_lost_indepressionnet_top_quartile = 
+           rowSums(across(all_of(dep_net_top_25_percent_w_suff)))) %>%
+  mutate(proportion_volume_lost_depression_net_by_network_size_sum_top_25 = sum_fascicle_vol_lost_indepressionnet_top_quartile/top_25_total_volume_dep) %>%
 
+  #sum of total volume lost in nondepression network and proportion of volume lost in depression network (volume lost/network volume size) bottom 3 quartiles
+  mutate(sum_fascicle_vol_lost_nondepression_net_bottom_3_quartiles = 
+           rowSums(across(all_of(nondep_net_bottom_75_percent_w_suff)))) %>%
+  mutate(proportion_volume_lost_nondepression_net_by_network_size_sum_bottom_75 = sum_fascicle_vol_lost_nondepression_net_bottom_3_quartiles/bottom_75_total_volume_nondep) %>%
+
+  ##sum of total volume lost in depression + anxiety network and proportion of volume lost in network (volume lost/network volume size) top quartile
+  mutate(sum_fascicle_vol_lost_indep_and_anxiety_net_combined = 
+           rowSums(across(all_of(dep_and_anxiety_net_unique_names_w_suff)))) %>%
+  mutate(proportion_fascicle_vol_lost_indep_and_anxiety_net_combined = sum_fascicle_vol_lost_indep_and_anxiety_net_combined/dep_and_anxiety_net_unique_net_volume) %>%
+ 
+  ##sum of total volume lost in areas of overlap between depression + anxiety network and proportion of volume lost in network (volume lost/network volume size) top quartile
+  mutate(sum_fascicle_vol_lost_indep_and_anxiety_net_overlap = 
+           rowSums(across(all_of(dep_and_anxiety_net_overlap_names_w_suff)))) %>%
+  mutate(proportion_fascicle_vol_lost_indep_and_anxiety_net_overlap = sum_fascicle_vol_lost_indep_and_anxiety_net_overlap/dep_and_anxiety_net_overlap_net_volume) %>%
+  
+  ##sum of total volume lost in depression, no overlap with anxiety network and proportion of volume lost in network (volume lost/network volume size) top quartile
+  mutate(sum_fascicle_vol_lost_indepressionnet_no_anxiety_overlap = 
+           rowSums(across(all_of(dep_only_names_w_suff)))) %>%
+  mutate(proportion_fascicle_vol_lost_indepressionnet_no_anxiety_overlap = sum_fascicle_vol_lost_indepressionnet_no_anxiety_overlap/dep_only_net_vol) %>%
+  
+    ##sum of total volume lost in anxiety, no depression overlap network and proportion of volume lost in network (volume lost/network volume size) top quartile
+  mutate(sum_fascicle_vol_lost_inanxietynet_no_depression_overlap = 
+           rowSums(across(all_of(anxiety_only_names_w_suff)))) %>%
+  mutate(proportion_fascicle_vol_lost_inanxietynet_no_depression_overlap = sum_fascicle_vol_lost_inanxietynet_no_depression_overlap/anxiety_only_net_vol) %>%
+  
   ungroup()   
 
 #neurosynth_anxiety_network_fascicle_overlap
@@ -426,23 +509,56 @@ df_demo_and_fascicles <- df_demo_and_fascicles %>%
 ## Anxiety within/outside network interaction
 ```{r anxiety_net_intx}
 
+## demographics
+
+
+### BEST SPLIT IS STRATIFYING ON ANXIETY MEDS!!!! Better than on variable that includes anxietyGroupVar(meds + anxiety diagnoses), or anxiety diagnosis alone
+make_demographics_table_ms_anxiety(data_frame = df_demo_and_fascicles[df_demo_and_fascicles$anxietyGroupVar!= 0,])
+
+
 #clean up data frame
 df_empi_dx_network_proportions <- df_demo_and_fascicles %>%
   filter(anxietyGroupVar != 0) %>% #lose 93, n now 719
   mutate(subject = as.factor(EMPI)) %>%
   mutate(Diagnosis = ifelse(anxietyGroupVar==1, "MS-Anxiety", "MS+Anxiety")) %>%
   mutate(Diagnosis = as.factor(Diagnosis)) %>%
+  mutate(Has.anxietydx = as.factor(Has.anxietydx)) %>%
+  mutate(Anxiolytics_status = ifelse(On.Anxiolytics_no_beta_blocker, "On.Anxiolytics", "Off.Anxiolytics")) %>%
+  mutate(Anxiolytics_status = as.factor(Anxiolytics_status)) %>%
+  mutate(Benzo_status = ifelse(On.Benzos, "On.Benzos", "Off.Benzos")) %>%
+  mutate(Benzo_status = as.factor(Benzo_status)) %>%
   mutate(Anxiety_network = proportion_volume_lost_anxiety_net_by_network_size_sum_top_25) %>%
   mutate(Nonanxiety_network = proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75) %>%
-  dplyr::select(subject, osex, Diagnosis, Anxiety_network, Nonanxiety_network, PAT_AGE_AT_EXAM) %>% 
-  gather(Network, proportion_affected, -subject, -Diagnosis, -PAT_AGE_AT_EXAM, -osex) %>% #this is like a melt. Keeps empi and depGroupVar out of the melt
+  dplyr::select(subject, osex, Diagnosis, Anxiety_network, Nonanxiety_network, Anxiolytics_status, Has.anxietydx, Benzo_status, PAT_AGE_AT_EXAM) %>% 
+  gather(Network, proportion_affected, -subject, -Diagnosis, -PAT_AGE_AT_EXAM, -osex, -Anxiolytics_status, -Has.anxietydx, -Benzo_status) %>% #this is like a melt. Keeps empi and depGroupVar out of the melt
   mutate(Network = as.factor(Network)) %>%
   ungroup()
  
 #simple t test, disease within versus outside anxiety network; mean within anxiety net: 0.5426694 affected, mean outside anxiety network = 0.3062429, T=57.44, p<2.2*10^-16, 95% CI 0.22-0.24
+#MS+Anxiety, MS-Anxiety, meds + anxiety dx, true normal = 0.3850697; MS+ anxiety: ; MS-anxiety: 0.3672053
+mean(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Diagnosis == "MS+Anxiety"])
+mean(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Diagnosis == "MS-Anxiety"])
 
+#Anxiety dx vs no anxiety dx
+#anxiety dx: 0.3785979; no anxiety dx: 0.3723245
+mean(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Has.anxietydx==1])
+mean(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Has.anxietydx==0])
+
+#On.Anxiolytics vs Off.Anxiolytics
+#on anxiolytics: 0.415625; off anxiolytics:0.3664898
+mean(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Anxiolytics_status=="On.Anxiolytics"])
+mean(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Anxiolytics_status=="Off.Anxiolytics"])
+
+#On.Benzos vs Off.Benzos
+#on benzos: 0.4022933; off benzos:0.372135
+mean(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Benzo_status=="On.Benzos"])
+mean(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Benzo_status=="Off.Benzos"])
+
+#histos
 hist(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Network == "Anxiety_network"])
 hist(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Network == "Nonanxiety_network"])
+
+## Means of separate groups: 
 
 #t test, t = 63.621, df = 718, p-value < 2.2e-16; 95 percent confidence interval:0.2349467 0.2499088, mean diff: 0.2424277 
 within_vs_outside_anxiety_net_t <- t.test(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Network == "Anxiety_network"], df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Network == "Nonanxiety_network"], paired = T)
@@ -471,10 +587,27 @@ summary(diagnosis_by_network_interaction_lmer)
 #Diagnosis: NS
 confint(diagnosis_by_network_interaction_lmer)
 
-```
-# Compare anxiety burden (presence of condition, number of anxiety comorbidities) by fascicle, by overall injury, and by volume of lesions
-```{r compare_anxiety_burden_by_fascicle_injury_lesion_volume}
+## Anxiety network x anxiolytics status
+#Network (nonanxiety <anxiety network) : T = -58.141   <2e-16 ***; Anxiolytic status: On.anxiolytics>off.anxiolytics; T= 2.473   0.0136 *  
+#Mean prop affected: on anxiolytics: 0.415625;  off anxioloytics: 0.3664898
 
+disease_within_vs_outside_anxiety_net_by_anxiolytic_status_lmer <- lmer(proportion_affected ~ Network*Anxiolytics_status + (1|subject), data = df_empi_dx_network_proportions)
+summary(disease_within_vs_outside_anxiety_net_by_anxiolytic_status_lmer)
+confint(disease_within_vs_outside_anxiety_net_by_anxiolytic_status_lmer)
+
+## Anxiety network x benzo status
+#Network (nonanxiety <anxiety network) : T = -54.535   <2e-16***; Anxiety status: T = 0.462    P = 0.645
+
+disease_within_vs_outside_anxiety_net_by_benzo_lmer <- lmer(proportion_affected ~ Network*Benzo_status + (1|subject), data = df_empi_dx_network_proportions)
+summary(disease_within_vs_outside_anxiety_net_by_benzo_lmer)
+confint(disease_within_vs_outside_anxiety_net_by_benzo_lmer)
+
+## Anxiety network x anxiety diagnosis
+#Network (nonanxiety <anxiety network) : T = -54.535   <2e-16***; Anxiety status: T = 0.462    P = 0.645
+
+disease_within_vs_outside_anxiety_net_by_anxietydx_lmer <- lmer(proportion_affected ~ Network*Has.anxietydx + (1|subject), data = df_empi_dx_network_proportions)
+summary(disease_within_vs_outside_anxiety_net_by_anxietydx_lmer)
+confint(disease_within_vs_outside_anxiety_net_by_anxietydx_lmer)
 ```
 
 ## Compare disease burden by anxiety comorbidity by fascicle

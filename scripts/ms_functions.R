@@ -26,6 +26,120 @@ require('circlize')
 ####### Demographics ########
 #############################
 
+#### anxiety demographics
+make_demographics_table_ms_anxiety<- function(data_frame) {
+  #subset demographics
+  
+  listVars <- c("Race", 
+                "Sex",
+                "Age",
+                "Anxiety",
+                "Anxiety.And.Dep.GroupVar",
+                "PHQ2",
+                "PHQ9",
+                "Has.depdx", 
+                "Has.anxietydx", 
+                "On.Antidepressants",
+                "On.Anxiolytics_no_beta_blocker",
+                "on_anti_cd20",
+                "on_interferon",
+                "on_steroids",
+                "on_dmt",
+                "number_of_dx",
+                "number_of_dx_extended",
+                "number_of_psychiatric_comorbidities_extended",
+                "number_of_anxiety_comorbidities_extended",
+                "number_of_medications",
+                "on_bcp",
+                "volume_of_mimosa_lesions", 
+                "sum_fascicle_vol_lost",
+                "proportion_volume_lost_per_total_network_size_sum",
+                "sum_fascicle_vol_lost_inanxietynet_all",
+                "proportion_volume_lost_anxiety_net_by_network_size_sum",
+                "sum_fascicle_vol_lost_inanxietynet_top_quartile",
+                "proportion_volume_lost_anxiety_net_by_network_size_sum_top_25", 
+                "sum_fascicle_vol_lost_nonanxiety_net_bottom_3_quartiles",
+                "proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75",
+                "proportion_volume_lost_depression_net_by_network_size_sum_top_25",
+                "proportion_volume_lost_nondepression_net_by_network_size_sum_bottom_75",
+                "proportion_fascicle_vol_lost_indep_and_anxiety_net_combined",
+                "proportion_fascicle_vol_lost_indep_and_anxiety_net_overlap",
+                "proportion_fascicle_vol_lost_indepressionnet_no_anxiety_overlap",
+                "proportion_fascicle_vol_lost_inanxietynet_no_depression_overlap") #Race 1 = caucasian, Sex 1 = M age = years
+
+  
+  #for_parse <- paste0("data.frame(data_frame$race_binarized, data_frame$sex_binarized, data_frame$PAT_AGE_AT_EXAM, data_frame$depGroupVar, data_frame$PHQ.2, data_frame$PHQ.9)")
+  for_parse <- paste0("data.frame(data_frame$RACE, 
+                      data_frame$sex_binarized, 
+                      data_frame$PAT_AGE_AT_EXAM, 
+                      data_frame$anxietyGroupVar,
+                      data_frame$Anxiety.And.Dep.GroupVar,
+                      data_frame$PHQ.2, 
+                      data_frame$PHQ.9, 
+                      data_frame$Has.depdx, 
+                      data_frame$Has.anxietydx, 
+                      data_frame$On.Antidepressants,
+                      data_frame$On.Anxiolytics_no_beta_blocker,
+                      data_frame$On.Anti_cd20,
+                      data_frame$On.Interferon,
+                      data_frame$On.Steroids,
+                      data_frame$On.Dmt,
+                      data_frame$number_of_dx, 
+                      data_frame$number_of_dx_extended, 
+                      data_frame$number_of_psychiatric_comorbidities_extended,
+                      data_frame$number_of_anxiety_comorbidities_extended,
+                      data_frame$number_of_medications, 
+                      data_frame$On.Bcp, 
+                      data_frame$volume_of_mimosa_lesions, 
+                      data_frame$sum_fascicle_vol_lost, 
+                      data_frame$proportion_volume_lost_per_total_network_size_sum,
+                      data_frame$sum_fascicle_vol_lost_inanxietynet_all,
+                      data_frame$proportion_volume_lost_anxiety_net_by_network_size_sum,
+                      data_frame$sum_fascicle_vol_lost_inanxietynet_top_quartile, 
+                      data_frame$proportion_volume_lost_anxiety_net_by_network_size_sum_top_25, 
+                      data_frame$sum_fascicle_vol_lost_nonanxiety_net_bottom_3_quartiles, 
+                      data_frame$proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75,
+                      data_frame$proportion_volume_lost_depression_net_by_network_size_sum_top_25,
+                      data_frame$proportion_volume_lost_nondepression_net_by_network_size_sum_bottom_75,
+                      data_frame$proportion_fascicle_vol_lost_indep_and_anxiety_net_combined,
+                      data_frame$proportion_fascicle_vol_lost_indep_and_anxiety_net_overlap,
+                      data_frame$proportion_fascicle_vol_lost_indepressionnet_no_anxiety_overlap,
+                      data_frame$proportion_fascicle_vol_lost_inanxietynet_no_depression_overlap)")
+  
+
+  demo <- eval(parse(text = for_parse)) 
+  names(demo) <- c(listVars)
+  
+  #Change categorical values to have names
+  
+  ### uncomment the line below if you want to binarize race
+  # demo$Race <- ifelse(demo$Race == 1, "Caucasian", "Non-caucasian")
+  demo$Sex <- ifelse(demo$Sex == 1, "Male", "Female")
+  
+  
+  
+  #Define Categorical Variables
+  cat_variables <- c("Race", "Sex", "Anxiety", "Has.anxietydx,", "On.Anxiolytics_no_beta_blockers","Has.depdx", "On.Antidepressants", "on_anti_cd20", "on_interferon", "on_steroids", "on_dmt", "on_bcp")
+  title <- c(paste0("Demographics_Anxiety"))
+  
+  #create demographics table stratifying by anxiety Group Var
+  demo_table_by_anxietyGroupVar <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("Anxiety"))
+  print(demo_table_by_anxietyGroupVar , showAllLevels = TRUE)
+  
+  #create demographics table stratifying by having psych 
+  demo_table_by_anxietydx <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("Has.anxietydx"))
+  print(demo_table_by_anxietydx , showAllLevels = TRUE)
+  
+  #create demographics table stratifying by being on anxiety meds
+  demo_table_by_on_anxiolytics <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("On.Anxiolytics_no_beta_blocker"))
+  print(demo_table_by_on_anxiolytics , showAllLevels = TRUE)
+  
+  #create demographics table stratifying by anxiety and dep Group var
+  demo_table_by_on_depAndAnxiety <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("Anxiety.And.Dep.GroupVar"))
+  print(demo_table_by_on_depAndAnxiety , showAllLevels = TRUE)
+
+  
+}
 
 #######Matched group all clusters ##############
 make_demographics_table_ms_Hydra_k2<- function(data_frame) {

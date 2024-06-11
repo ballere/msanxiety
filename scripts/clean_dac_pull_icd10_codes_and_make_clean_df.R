@@ -159,6 +159,7 @@ data_final_rds <-data_pull %>%
   mutate(Has.Anxiety.No.Depression = ifelse((anxietyGroupVar == 2 & depGroupVar != 2), 1, 0)) %>%
   mutate(Has.Depression.No.Anxiety = ifelse((anxietyGroupVar != 2 & depGroupVar == 2), 1, 0)) %>%
   mutate(Has.Depression.And.Anxiety = ifelse((anxietyGroupVar == 2 & depGroupVar == 2), 1, 0)) %>%
+  mutate(Anxiety.And.Dep.GroupVar = ifelse(healthy_ish, 1, ifelse(Has.Anxiety.No.Depression, 2, ifelse(Has.Depression.No.Anxiety, 3, ifelse(Has.Depression.And.Anxiety, 4, 0))))) %>% #healthy = 1, anxiety alone = 2, dep no anxiety only = 3, dep + anxiety = 4, exclude 0) 
   ungroup() #n=3,737 unique people, n= 16,830 total
 
 
