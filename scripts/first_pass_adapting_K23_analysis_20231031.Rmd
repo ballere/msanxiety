@@ -402,7 +402,7 @@ top_25_total_volume_dep <- sum(dep_net_overlap_from_bp_paper$num_voxels_total[1:
 nondep_net_bottom_75_percent <- dep_net_overlap_from_bp_paper$fascicle[(round(dim(dep_net_overlap_from_bp_paper)[1]/4,0) +1):dim(dep_net_overlap_from_bp_paper)[1]]
 nondep_net_bottom_75_percent_w_suff <- nondep_net_bottom_75_percent %>%gsub(pattern = "(.*)", replacement = "\\1_vol", perl=TRUE)
 
-bottom_75_total_volume_nondep <- sum(dep_net_overlap_from_bp_paper$non_zero_voxels_in_dep_map[(round(dim(dep_net_overlap_from_bp_paper)[1]/4,0) +1):dim(dep_net_overlap_from_bp_paper)[1]])
+bottom_75_total_volume_nondep <- sum(dep_net_overlap_from_bp_paper$num_voxels_total[(round(dim(dep_net_overlap_from_bp_paper)[1]/4,0) +1):dim(dep_net_overlap_from_bp_paper)[1]])
 
 ```
 
@@ -513,7 +513,8 @@ df_demo_and_fascicles <- df_demo_and_fascicles %>%
 
 
 ### BEST SPLIT IS STRATIFYING ON ANXIETY MEDS!!!! Better than on variable that includes anxietyGroupVar(meds + anxiety diagnoses), or anxiety diagnosis alone
-make_demographics_table_ms_anxiety(data_frame = df_demo_and_fascicles[df_demo_and_fascicles$anxietyGroupVar!= 0,])
+make_demographics_table_ms_anxiety(data_frame = df_demo_and_fascicles)
+make_demographics_table_ms_anxiety(data_frame = df_demo_and_fascicles[df_demo_and_fascicles$anxietyGroupVar != 0,])
 
 
 #clean up data frame
@@ -523,9 +524,9 @@ df_empi_dx_network_proportions <- df_demo_and_fascicles %>%
   mutate(Diagnosis = ifelse(anxietyGroupVar==1, "MS-Anxiety", "MS+Anxiety")) %>%
   mutate(Diagnosis = as.factor(Diagnosis)) %>%
   mutate(Has.anxietydx = as.factor(Has.anxietydx)) %>%
-  mutate(Anxiolytics_status = ifelse(On.Anxiolytics_no_beta_blocker, "On.Anxiolytics", "Off.Anxiolytics")) %>%
+  mutate(Anxiolytics_status = ifelse(On.Anxiolytics_no_beta_blocker==1, "On.Anxiolytics", "Off.Anxiolytics")) %>%
   mutate(Anxiolytics_status = as.factor(Anxiolytics_status)) %>%
-  mutate(Benzo_status = ifelse(On.Benzos, "On.Benzos", "Off.Benzos")) %>%
+  mutate(Benzo_status = ifelse(On.Benzos==1, "On.Benzos", "Off.Benzos")) %>%
   mutate(Benzo_status = as.factor(Benzo_status)) %>%
   mutate(Anxiety_network = proportion_volume_lost_anxiety_net_by_network_size_sum_top_25) %>%
   mutate(Nonanxiety_network = proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75) %>%

@@ -124,8 +124,8 @@ data_final_rds <-data_pull %>%
   mutate(number_of_mood_comorbidities_extended = ifelse(!is.na(all_icd10_dx), str_count(all_icd10_dx, "F3"), 0)) %>%
   mutate(number_of_medications = ifelse(!is.na(Medication), str_count(Medication, ";") + 1, 0)) %>%
   mutate(On.Bcp = ifelse(str_detect(Medication, paste(bcp$bcp_name, collapse = "|")), 1, 0)) %>%
-  mutate(On.Psych.Meds = ifelse(str_detect(Medication, paste(psych_meds$Medication, collapse = "|")), 1, 0)) %>%
-  mutate(On.Psych.Meds.Extended = ifelse(str_detect(Medication, paste(psych_meds_extended$Medication, collapse = "|")), 1, 0)) %>% #extended includes amitriptyline and gabapentin (and brands) in med list
+  mutate(On.Psych.Meds = ifelse(str_detect(Medication, paste(psych_meds$Medication.Name, collapse = "|")), 1, 0)) %>%
+  mutate(On.Psych.Meds.Extended = ifelse(str_detect(Medication, paste(psych_meds_extended$Medication.Name, collapse = "|")), 1, 0)) %>% #extended includes amitriptyline and gabapentin (and brands) in med list
   mutate(On.Antidepressants = ifelse(str_detect(Medication, paste(psych_meds$Medication[psych_meds$Antidepressant == "t"], collapse = "|")), 1, 0)) %>%
   mutate(On.Anxiolytics = ifelse(str_detect(Medication, paste(anxiety_meds$Medication, collapse = "|")), 1, 0)) %>%
   mutate(On.Anxiolytics_no_beta_blocker = ifelse(str_detect(Medication, paste(anxiety_meds_no_beta_blocker$Medication, collapse = "|")), 1, 0)) %>%
@@ -139,27 +139,26 @@ data_final_rds <-data_pull %>%
   mutate(Has.depdx = ifelse(grepl("F3[2:4]", all_icd10_dx), 1, 0)) %>%
   mutate(Has.anxietydx = ifelse(grepl("F4", all_icd10_dx), 1, 0)) %>%
   mutate(Has.CannabisUsedx = ifelse(grepl("F12", all_icd10_dx), 1, 0)) %>%
-  mutate(Has.Anxietydx.Or.Antianxietymed = ifelse(Has.anxietydx | On.Anxiolytics,1,0)) %>%
-  mutate(PHQ.2_modsev_dep_sxs = ifelse(Has.PHQ2 & PHQ.2 >= 3, 1, 0)) %>%
-  mutate(PHQ.9_modsev_dep_sxs = ifelse(Has.PHQ9 & PHQ.9 >= 10, 1, 0)) %>%
-  mutate(PHQ.2_mild_dep_sxs = ifelse(Has.PHQ2 & PHQ.2 > 0 & PHQ.2 < 3, 1, 0)) %>%
-  mutate(PHQ.9_mild_dep_sxs = ifelse(Has.PHQ9 & PHQ.9 > 0 & PHQ.9 < 10, 1, 0)) %>%
-  mutate(PHQ.2_zero = ifelse(Has.PHQ2 & PHQ.2 == 0, 1, 0)) %>%
-  mutate(PHQ.9_zero = ifelse(Has.PHQ9 & PHQ.9 == 0, 1, 0)) %>%
-  mutate(dep_by_dx_phq = ifelse((Has.depdx | PHQ.2_modsev_dep_sxs | PHQ.9_modsev_dep_sxs),1,0)) %>%
-  mutate(dep_by_dx_phq_antidep = ifelse((Has.depdx | On.Antidepressants | PHQ.2_modsev_dep_sxs | PHQ.9_modsev_dep_sxs),1,0)) %>%
-  mutate(healthy_ish = ifelse(((number_of_psychiatric_comorbidities_extended == 0) & !On.Psych.Meds), 1, 0)) %>% #just like true healthy but doesn't require a phq screen
-  mutate(true_healthy = ifelse(((number_of_psychiatric_comorbidities_extended == 0) & !On.Psych.Meds & (PHQ.2_zero | PHQ.9_zero)), 1, 0)) %>%
-  mutate(dep_by_dx_phq_meds_healthy_phq0_no_psych_meds = ifelse(dep_by_dx_phq_antidep | true_healthy, 1, 0)) %>%
+  mutate(Has.Anxietydx.Or.Antianxietymed = ifelse((Has.anxietydx==1) | (On.Anxiolytics==1),1,0)) %>%
+  mutate(PHQ.2_modsev_dep_sxs = ifelse((Has.PHQ2==1) & PHQ.2 >= 3, 1, 0)) %>%
+  mutate(PHQ.9_modsev_dep_sxs = ifelse((Has.PHQ9==1) & PHQ.9 >= 10, 1, 0)) %>%
+  mutate(PHQ.2_mild_dep_sxs = ifelse((Has.PHQ2==1) & PHQ.2 > 0 & PHQ.2 < 3, 1, 0)) %>%
+  mutate(PHQ.9_mild_dep_sxs = ifelse((Has.PHQ9==1) & PHQ.9 > 0 & PHQ.9 < 10, 1, 0)) %>%
+  mutate(PHQ.2_zero = ifelse((Has.PHQ2==1) & PHQ.2 == 0, 1, 0)) %>%
+  mutate(PHQ.9_zero = ifelse((Has.PHQ9==1) & PHQ.9 == 0, 1, 0)) %>%
+  mutate(dep_by_dx_phq = ifelse(((Has.depdx==1) | (PHQ.2_modsev_dep_sxs==1) | (PHQ.9_modsev_dep_sxs==1)),1,0)) %>%
+  mutate(dep_by_dx_phq_antidep = ifelse(((Has.depdx==1) | (On.Antidepressants==1) | (PHQ.2_modsev_dep_sxs==1) | (PHQ.9_modsev_dep_sxs==1)),1,0)) %>%
+  mutate(healthy_ish = ifelse(((number_of_psychiatric_comorbidities_extended == 0) & (On.Psych.Meds.Extended==0)), 1, 0)) %>% #just like true healthy but doesn't require a phq screen
+  mutate(true_healthy = ifelse(((number_of_psychiatric_comorbidities_extended == 0) & (On.Psych.Meds.Extended==0) & ((PHQ.2_zero==1) | (PHQ.9_zero==1))), 1, 0)) %>%
+  mutate(dep_by_dx_phq_meds_healthy_phq0_no_psych_meds = ifelse((dep_by_dx_phq_antidep==1) | (true_healthy==1), 1, 0)) %>%
   left_join(unique_empi_with_ms_providers, by = "EMPI") %>% 
   rowwise(ACCESSION_NUM) %>%
-  mutate(depGroupVar =
-           sum(c(dep_by_dx_phq_meds_healthy_phq0_no_psych_meds,dep_by_dx_phq_antidep))) %>%#you get an extra point if you are in the depression group, so the end result is dep = 2, healthy = 1, 0 for exclude
-  mutate(anxietyGroupVar = ifelse((Has.anxietydx | On.Anxiolytics_no_beta_blocker), 2, ifelse(healthy_ish, 1, 0))) %>%
+  mutate(depGroupVar = ifelse(dep_by_dx_phq_antidep==1, 2, ifelse(dep_by_dx_phq_meds_healthy_phq0_no_psych_meds == 1, 1, 0))) %>% # dep = 2, healthy = 1, 0 for exclude
+  mutate(anxietyGroupVar = ifelse(((Has.anxietydx==1) | (On.Anxiolytics_no_beta_blocker==1)), 2, ifelse(healthy_ish, 1, 0))) %>%
   mutate(Has.Anxiety.No.Depression = ifelse((anxietyGroupVar == 2 & depGroupVar != 2), 1, 0)) %>%
   mutate(Has.Depression.No.Anxiety = ifelse((anxietyGroupVar != 2 & depGroupVar == 2), 1, 0)) %>%
   mutate(Has.Depression.And.Anxiety = ifelse((anxietyGroupVar == 2 & depGroupVar == 2), 1, 0)) %>%
-  mutate(Anxiety.And.Dep.GroupVar = ifelse(healthy_ish, 1, ifelse(Has.Anxiety.No.Depression, 2, ifelse(Has.Depression.No.Anxiety, 3, ifelse(Has.Depression.And.Anxiety, 4, 0))))) %>% #healthy = 1, anxiety alone = 2, dep no anxiety only = 3, dep + anxiety = 4, exclude 0) 
+  mutate(Anxiety.And.Dep.GroupVar = ifelse((healthy_ish==1), 1, ifelse((Has.Anxiety.No.Depression==1), 2, ifelse((Has.Depression.No.Anxiety==1), 3, ifelse((Has.Depression.And.Anxiety==1), 4, 0))))) %>% #healthy = 1, anxiety alone = 2, dep no anxiety only = 3, dep + anxiety = 4, exclude 0) 
   ungroup() #n=3,737 unique people, n= 16,830 total
 
 

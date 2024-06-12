@@ -33,10 +33,8 @@ make_demographics_table_ms_anxiety<- function(data_frame) {
   listVars <- c("Race", 
                 "Sex",
                 "Age",
-                "Anxiety",
+                "AnxietyGroupVar",
                 "Anxiety.And.Dep.GroupVar",
-                "PHQ2",
-                "PHQ9",
                 "Has.depdx", 
                 "Has.anxietydx", 
                 "On.Antidepressants",
@@ -45,6 +43,8 @@ make_demographics_table_ms_anxiety<- function(data_frame) {
                 "on_interferon",
                 "on_steroids",
                 "on_dmt",
+                "PHQ2",
+                "PHQ9",
                 "number_of_dx",
                 "number_of_dx_extended",
                 "number_of_psychiatric_comorbidities_extended",
@@ -74,8 +74,6 @@ make_demographics_table_ms_anxiety<- function(data_frame) {
                       data_frame$PAT_AGE_AT_EXAM, 
                       data_frame$anxietyGroupVar,
                       data_frame$Anxiety.And.Dep.GroupVar,
-                      data_frame$PHQ.2, 
-                      data_frame$PHQ.9, 
                       data_frame$Has.depdx, 
                       data_frame$Has.anxietydx, 
                       data_frame$On.Antidepressants,
@@ -84,6 +82,8 @@ make_demographics_table_ms_anxiety<- function(data_frame) {
                       data_frame$On.Interferon,
                       data_frame$On.Steroids,
                       data_frame$On.Dmt,
+                      data_frame$PHQ.2, 
+                      data_frame$PHQ.9, 
                       data_frame$number_of_dx, 
                       data_frame$number_of_dx_extended, 
                       data_frame$number_of_psychiatric_comorbidities_extended,
@@ -119,11 +119,11 @@ make_demographics_table_ms_anxiety<- function(data_frame) {
   
   
   #Define Categorical Variables
-  cat_variables <- c("Race", "Sex", "Anxiety", "Has.anxietydx,", "On.Anxiolytics_no_beta_blockers","Has.depdx", "On.Antidepressants", "on_anti_cd20", "on_interferon", "on_steroids", "on_dmt", "on_bcp")
+  cat_variables <- c("Race", "Sex", "AnxietyGroupVar", "Has.anxietydx","Anxiety.And.Dep.GroupVar", "On.Anxiolytics_no_beta_blocker","Has.depdx", "On.Antidepressants", "on_anti_cd20", "on_interferon", "on_steroids", "on_dmt", "on_bcp")
   title <- c(paste0("Demographics_Anxiety"))
   
   #create demographics table stratifying by anxiety Group Var
-  demo_table_by_anxietyGroupVar <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("Anxiety"))
+  demo_table_by_anxietyGroupVar <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("AnxietyGroupVar"))
   print(demo_table_by_anxietyGroupVar , showAllLevels = TRUE)
   
   #create demographics table stratifying by having psych 
