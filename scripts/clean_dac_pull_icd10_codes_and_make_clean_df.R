@@ -140,6 +140,7 @@ data_final_rds <-data_pull %>%
   mutate(Has.anxietydx = ifelse(grepl("F4", all_icd10_dx), 1, 0)) %>%
   mutate(Has.CannabisUsedx = ifelse(grepl("F12", all_icd10_dx), 1, 0)) %>%
   mutate(Has.Anxietydx.Or.Antianxietymed = ifelse((Has.anxietydx==1) | (On.Anxiolytics==1),1,0)) %>%
+  mutate(Has.Anxietydx.AND.Antianxietymed = ifelse((Has.anxietydx==1) & (On.Anxiolytics==1),1,0)) %>%
   mutate(PHQ.2_modsev_dep_sxs = ifelse((Has.PHQ2==1) & PHQ.2 >= 3, 1, 0)) %>%
   mutate(PHQ.9_modsev_dep_sxs = ifelse((Has.PHQ9==1) & PHQ.9 >= 10, 1, 0)) %>%
   mutate(PHQ.2_mild_dep_sxs = ifelse((Has.PHQ2==1) & PHQ.2 > 0 & PHQ.2 < 3, 1, 0)) %>%
@@ -155,12 +156,18 @@ data_final_rds <-data_pull %>%
   rowwise(ACCESSION_NUM) %>%
   mutate(depGroupVar = ifelse(dep_by_dx_phq_antidep==1, 2, ifelse(dep_by_dx_phq_meds_healthy_phq0_no_psych_meds == 1, 1, 0))) %>% # dep = 2, healthy = 1, 0 for exclude
   mutate(anxietyGroupVar = ifelse(((Has.anxietydx==1) | (On.Anxiolytics_no_beta_blocker==1)), 2, ifelse(healthy_ish, 1, 0))) %>%
+  mutate(anxietydxANDbenzoGroupVar = ifelse(((Has.anxietydx==1) | (On.Benzos==1)), 2, ifelse(healthy_ish, 1, 0))) %>%
+  mutate(Has.Anxietydx.AND.AntianxietymedGroupVar = ifelse((Has.Anxietydx.AND.Antianxietymed==1), 2, ifelse(healthy_ish, 1, 0))) %>% #0 if excluded, 1 if healthyish, 2 if has anxiety dx AND on med
   mutate(Has.Anxiety.No.Depression = ifelse((anxietyGroupVar == 2 & depGroupVar != 2), 1, 0)) %>%
   mutate(Has.Depression.No.Anxiety = ifelse((anxietyGroupVar != 2 & depGroupVar == 2), 1, 0)) %>%
   mutate(Has.Depression.And.Anxiety = ifelse((anxietyGroupVar == 2 & depGroupVar == 2), 1, 0)) %>%
   mutate(Anxiety.And.Dep.GroupVar = ifelse((healthy_ish==1), 1, ifelse((Has.Anxiety.No.Depression==1), 2, ifelse((Has.Depression.No.Anxiety==1), 3, ifelse((Has.Depression.And.Anxiety==1), 4, 0))))) %>% #healthy = 1, anxiety alone = 2, dep no anxiety only = 3, dep + anxiety = 4, exclude 0) 
+  mutate(Anxiety.And.Dep.And.AnxietyMedsGroupVar = ifelse((healthy_ish==1), 1, ifelse(((Has.Depression.And.Anxiety==1) & (On.Anxiolytics==1)), 5, ifelse((Has.Anxietydx.AND.Antianxietymed==1), 4, ifelse((On.Anxiolytics==1), 3, ifelse((Has.anxietydx == 1), 2, 0)))))) %>% #healthy = 1, anxiety alone = 2, on.anxiolytics = 3, anxiety and anxiety meds = 4, dep and anxiety and on anxiolytics = 5, do these in reverse order because of the conditional evaluation
+  mutate(oAnxiety.And.Dep.And.AnxietyMedsGroupVar = ordered(Anxiety.And.Dep.And.AnxietyMedsGroupVar, levels = c(1,2,3,4,5,0), labels = c("healthy_ish", "Has.anxietydx", "On.Anxiolytics", "Has.Anxietydx.AND.Antianxietymed", "Has.Anxiety.Dep.AND.On.Anxietymeds", "unclassified"))) %>% #healthy = 1, anxiety alone = 2, on.anxiolytics = 3, anxiety and anxiety meds = 4, dep and anxiety and on anxiolytics = 5
+  mutate(Anxietydx.Meds.And.Dep.Collapsed = oAnxiety.And.Dep.And.AnxietyMedsGroupVar) %>% #copy values from oanxiety_group
+  mutate(Anxietydx.Meds.And.Dep.Collapsed = str_replace_all(oAnxiety.And.Dep.And.AnxietyMedsGroupVar, c("Has.Anxiety.Dep.AND.On.Anxietymeds" = "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep","Has.Anxietydx.AND.Antianxietymed" = "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep"))) %>% ##combine people who have depression and anxiety 
+  mutate(oAnxietydx.Meds.Inc.Dep.Collapsed = ordered(Anxietydx.Meds.And.Dep.Collapsed, levels = c("healthy_ish", "Has.anxietydx", "On.Anxiolytics", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep", "unclassified"))) %>%
   ungroup() #n=3,737 unique people, n= 16,830 total
-
 
 saveRDS(data_final_rds, file = output_file)
 
