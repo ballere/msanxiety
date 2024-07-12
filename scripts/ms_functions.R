@@ -34,11 +34,17 @@ make_demographics_table_ms_anxiety<- function(data_frame) {
                 "Sex",
                 "Age",
                 "AnxietyGroupVar",
+                "AnxietydxANDbenzoGroupVar",
                 "Anxiety.And.Dep.GroupVar",
+                "Has.Anxietydx.Or.Antianxietymed",
+                "Has.Anxietydx.AND.Antianxietymed",
+                "Has.Anxietydx.AND.AntianxietymedGroupVar",
+                "oAnxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar",
                 "Has.depdx", 
                 "Has.anxietydx", 
                 "On.Antidepressants",
                 "On.Anxiolytics_no_beta_blocker",
+                "On.Benzos",
                 "on_anti_cd20",
                 "on_interferon",
                 "on_steroids",
@@ -64,6 +70,7 @@ make_demographics_table_ms_anxiety<- function(data_frame) {
                 "proportion_volume_lost_nondepression_net_by_network_size_sum_bottom_75",
                 "proportion_fascicle_vol_lost_indep_and_anxiety_net_combined",
                 "proportion_fascicle_vol_lost_indep_and_anxiety_net_overlap",
+                "proportion_fascicle_vol_lost_indep_and_anxiety_net_overlap_no_CC",
                 "proportion_fascicle_vol_lost_indepressionnet_no_anxiety_overlap",
                 "proportion_fascicle_vol_lost_inanxietynet_no_depression_overlap") #Race 1 = caucasian, Sex 1 = M age = years
 
@@ -73,11 +80,17 @@ make_demographics_table_ms_anxiety<- function(data_frame) {
                       data_frame$sex_binarized, 
                       data_frame$PAT_AGE_AT_EXAM, 
                       data_frame$anxietyGroupVar,
+                      data_frame$anxietydxANDbenzoGroupVar,
                       data_frame$Anxiety.And.Dep.GroupVar,
+                      data_frame$Has.Anxietydx.Or.Antianxietymed,
+                      data_frame$Has.Anxietydx.AND.Antianxietymed,
+                      data_frame$Has.Anxietydx.AND.AntianxietymedGroupVar,
+                      data_frame$oAnxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar,
                       data_frame$Has.depdx, 
                       data_frame$Has.anxietydx, 
                       data_frame$On.Antidepressants,
                       data_frame$On.Anxiolytics_no_beta_blocker,
+                      data_frame$On.Benzos,
                       data_frame$On.Anti_cd20,
                       data_frame$On.Interferon,
                       data_frame$On.Steroids,
@@ -103,6 +116,7 @@ make_demographics_table_ms_anxiety<- function(data_frame) {
                       data_frame$proportion_volume_lost_nondepression_net_by_network_size_sum_bottom_75,
                       data_frame$proportion_fascicle_vol_lost_indep_and_anxiety_net_combined,
                       data_frame$proportion_fascicle_vol_lost_indep_and_anxiety_net_overlap,
+                      data_frame$proportion_fascicle_vol_lost_indep_and_anxiety_net_overlap_no_CC,
                       data_frame$proportion_fascicle_vol_lost_indepressionnet_no_anxiety_overlap,
                       data_frame$proportion_fascicle_vol_lost_inanxietynet_no_depression_overlap)")
   
@@ -119,11 +133,15 @@ make_demographics_table_ms_anxiety<- function(data_frame) {
   
   
   #Define Categorical Variables
-  cat_variables <- c("Race", "Sex", "AnxietyGroupVar", "Has.anxietydx","Anxiety.And.Dep.GroupVar", "On.Anxiolytics_no_beta_blocker","Has.depdx", "On.Antidepressants", "on_anti_cd20", "on_interferon", "on_steroids", "on_dmt", "on_bcp")
+  cat_variables <- c("Race", "Sex", "AnxietyGroupVar", "AnxietydxANDbenzoGroupVar", "Has.Anxietydx.AND.AntianxietymedGroupVar", "oAnxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar", "Has.anxietydx","Anxiety.And.Dep.GroupVar", "Has.Anxietydx.Or.Antianxietymed", "On.Anxiolytics_no_beta_blocker","On.Benzos", "Has.depdx", "On.Antidepressants", "on_anti_cd20", "on_interferon", "on_steroids", "on_dmt", "on_bcp")
   title <- c(paste0("Demographics_Anxiety"))
   
   #create demographics table stratifying by anxiety Group Var
   demo_table_by_anxietyGroupVar <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("AnxietyGroupVar"))
+  print(demo_table_by_anxietyGroupVar , showAllLevels = TRUE)
+  
+  #create demographics table stratifying by anxietydxANDbenzo Group Var
+  demo_table_by_anxietyGroupVar <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("AnxietydxANDbenzoGroupVar"))
   print(demo_table_by_anxietyGroupVar , showAllLevels = TRUE)
   
   #create demographics table stratifying by having psych 
@@ -138,6 +156,18 @@ make_demographics_table_ms_anxiety<- function(data_frame) {
   demo_table_by_on_depAndAnxiety <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("Anxiety.And.Dep.GroupVar"))
   print(demo_table_by_on_depAndAnxiety , showAllLevels = TRUE)
 
+  #create demographics table stratifying by on/off benzos
+  demo_table_by_on_depAndAnxiety <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("On.Benzos"))
+  print(demo_table_by_on_depAndAnxiety , showAllLevels = TRUE)
+  
+  #create demographics table stratifying by hasAnxietyDx and on Anxiety meds
+  demo_table_by_on_depAndAnxiety <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("Has.Anxietydx.AND.AntianxietymedGroupVar"))
+  print(demo_table_by_on_depAndAnxiety , showAllLevels = TRUE)
+  
+  #create demographics table stratifying by hasAnxietyDx and on Anxiety meds, and true healthy rather than healthy_ish
+  demo_table_by_on_depAndAnxiety_true_healthy <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("oAnxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar"))
+  print(demo_table_by_on_depAndAnxiety_true_healthy , showAllLevels = TRUE)
+  
   
 }
 
