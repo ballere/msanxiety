@@ -111,7 +111,7 @@ mimosa_unique_score_gre_75 <- mimosa_qc_unique %>%
   mutate(EMPI = as.character(EMPI)) %>%
   dplyr::select(EMPI, EXAM_DATE, score) %>%
   slice(1) %>%
-  ungroup #n=786
+  ungroup 
 ```
 
 ```{r merge_df_with_mimosa}
@@ -786,7 +786,7 @@ tibble_overall_summaries_by_sex <-
   tibble_overall_summaries_males  
   
   ### analyses
-  
+    
 ```
 
 #### plots
@@ -1231,15 +1231,19 @@ prop_injured_by_anxiety_burden_and_sex_true_healty_collapsed_plot
 
 
 
-##Collapse anxiety dx and antianxiety meds with those plus depression, and anxiety dx OR on anxiety meds into 1 group -->> THIS IS THE MONEY
+#COLLAPSE anxiety dx and antianxiety meds with those plus depression, and anxiety dx OR on anxiety meds into 1 group -->> THIS IS THE MONEY
 ```{r group_anxietydx_meds_and_dep_comorbidity}
-
-
 #this collapses anxiety group + meds with those with anxiety group + meds + with/without depression
 
+#demo
+make_demographics_table_ms_anxiety(data_frame = df_demo_and_fascicles[df_demo_and_fascicles$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified",])
+
+make_demographics_table_ms_anxiety(data_frame = df_demo_and_fascicles[((df_demo_and_fascicles$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") & (df_demo_and_fascicles$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds")),])
+
+
 df_disease_burden_unc_and_anx_net_collapsed_variables <- df_demo_and_fascicles %>%
-  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
-  dplyr::select(proportion_volume_lost_per_total_network_size_sum, proportion_volume_lost_anxiety_net_by_network_size_sum_top_25, proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75, UF_L_prop, UF_R_prop, oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, osex) 
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>% 
+  dplyr::select(proportion_volume_lost_per_total_network_size_sum, proportion_volume_lost_anxiety_net_by_network_size_sum_top_25, proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75, UF_L_prop, UF_R_prop, oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, osex, anxiety_dose) 
  
 
  tibble_overall_summaries <- df_disease_burden_unc_and_anx_net_collapsed_variables %>% 
@@ -1286,33 +1290,82 @@ tibble_overall_summaries_by_sex <- df_disease_burden_unc_and_anx_net_collapsed_v
   tibble_overall_summaries_males  
  
   #mean disease
-  anxietyGrouping_mean_disease_lm <- lm(proportion_volume_lost_per_total_network_size_sum ~ oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, data=df_demo_and_fascicles)
+  
+  df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>% filter (anxiety_dose != 3) #3 is unclassified, 0 is no anxiety, 1 is diagnosis or on meds, 2 is diagnosis AND on meds
+  
+  #mean disease by anxiety dose: anxiety_dose  0.03606    0.01493   2.416   0.0162 *
+  anxietyGrouping_mean_disease_lm <- lm(proportion_volume_lost_per_total_network_size_sum ~ anxiety_dose + PAT_AGE_AT_EXAM, data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_mean_disease_lm)
   
-  anxietyGrouping_by_sex_mean_disease_lm <- lm(proportion_volume_lost_per_total_network_size_sum ~ oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed*osex, data=df_demo_and_fascicles)
+  ### gam instead
+    anxietyGrouping_mean_disease_gam <- gam(proportion_volume_lost_per_total_network_size_sum ~ anxiety_dose + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
+  summary(anxietyGrouping_mean_disease_gam)
+  
+  #mean disease with sex in model : anxiety_dose         anxiety_dose     0.0356677  0.0150093   2.376  0.01800 *  
+  anxietyGrouping_by_sex_mean_disease_lm <- lm(proportion_volume_lost_per_total_network_size_sum ~ anxiety_dose + osex + PAT_AGE_AT_EXAM, data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_by_sex_mean_disease_lm)
   
+  #gam: anxiety_dose  0.03692    0.01496   2.468    0.014 *  
+      anxietyGrouping_by_sex_mean_disease_gam <- gam(proportion_volume_lost_per_total_network_size_sum ~ anxiety_dose + osex+ s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
+      summary(anxietyGrouping_by_sex_mean_disease_gam)
+  
   #anxiety network
-  anxietyGrouping_anxiety_net_lm <- lm(proportion_volume_lost_anxiety_net_by_network_size_sum_top_25 ~ oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, data=df_demo_and_fascicles)
+  
+  ###  anxiety_dose    0.036474   0.017586   2.074 0.038768 *  ; PAT_AGE_AT_EXAM 0.004132   0.001058   3.905 0.000112 ***
+  anxietyGrouping_anxiety_net_lm <- lm(proportion_volume_lost_anxiety_net_by_network_size_sum_top_25 ~ anxiety_dose + PAT_AGE_AT_EXAM, data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_anxiety_net_lm)
   
-  anxietyGrouping_by_sex_anxiety_net_lm <- lm(proportion_volume_lost_anxiety_net_by_network_size_sum_top_25 ~ oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed*osex, data=df_demo_and_fascicles)
+  #gam
+   anxietyGrouping_anxiety_net_gam<- gam(proportion_volume_lost_anxiety_net_by_network_size_sum_top_25 ~ anxiety_dose + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
+  summary(anxietyGrouping_anxiety_net_gam)
+  
+  #volume lost in anxiety net by anxiety dose*sex: anxiety_dose         0.053407   0.021365   2.500   0.0129 *  
+  anxietyGrouping_by_sex_anxiety_net_lm <- lm(proportion_volume_lost_anxiety_net_by_network_size_sum_top_25 ~ anxiety_dose*osex + PAT_AGE_AT_EXAM, data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_by_sex_anxiety_net_lm)
   
-  #UF R
-  anxietyGrouping_UF_R_lm <- lm(UF_R_vol ~ oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, data=df_demo_and_fascicles)
+  #gam
+  anxietyGrouping_by_sex_anxiety_net_gam <- gam(proportion_volume_lost_anxiety_net_by_network_size_sum_top_25 ~ anxiety_dose*osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
+  summary(anxietyGrouping_by_sex_anxiety_net_gam)
+  
+  #volume lost in anxiety net by anxiety dose + sex + PAT_AGE_AT_EXAM: anxiety_dose     0.037282   0.017629   2.115   0.0351 *
+  anxietyGrouping_cov_sex_anxiety_net_lm <- lm(proportion_volume_lost_anxiety_net_by_network_size_sum_top_25 ~ anxiety_dose + osex + PAT_AGE_AT_EXAM, data=df_demo_and_fascicles_no_unclass_anxiety_dose)
+  summary(anxietyGrouping_cov_sex_anxiety_net_lm)
+  
+  #gam
+   anxietyGrouping_cov_sex_anxiety_net_gam <- gam(proportion_volume_lost_anxiety_net_by_network_size_sum_top_25 ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
+  summary(anxietyGrouping_cov_sex_anxiety_net_gam)
+  
+########UF R - just looking at uncinate by anxiety dose; anxiety_dose      369.72     187.93   1.967   0.0499 *  ***********
+  anxietyGrouping_UF_R_lm <- lm(UF_R_vol ~ anxiety_dose + PAT_AGE_AT_EXAM, data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_UF_R_lm)
   
-  anxietyGrouping_UF_R_by_sex_lm <- lm(UF_R_vol ~ oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed*osex, data=df_demo_and_fascicles)
+  #gam, anxiety_dose    357.0      188.8   1.891   0.0594 .
+  anxietyGrouping_UF_R_gam <- gam(UF_R_vol ~ anxiety_dose + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
+  summary(anxietyGrouping_UF_R_gam)
+  
+  #UF _ R anxiety_dose          anxiety_dose      377.35     188.43   2.003    0.046 *********   
+  anxietyGrouping_UF_R_by_sex_lm <- lm(UF_R_vol ~ anxiety_dose + osex + PAT_AGE_AT_EXAM, data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_UF_R_by_sex_lm)
   
-  #UF L
-  anxietyGrouping_UF_L_lm <- lm(UF_L_vol ~ oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, data=df_demo_and_fascicles)
+  #gam, anxiety_dose    364.2      189.3   1.924   0.0552 .  
+    anxietyGrouping_UF_R_by_sex_gam <- gam(UF_R_vol ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
+  summary(anxietyGrouping_UF_R_by_sex_gam)
+  
+  #UF L - anxiety_dose     222.193    133.138   1.669    0.096 .  
+  anxietyGrouping_UF_L_lm <- lm(UF_L_vol ~ anxiety_dose + PAT_AGE_AT_EXAM, data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_UF_L_lm)
   
-  anxietyGrouping_UF_L_by_sex_lm <- lm(UF_L_vol ~ oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed*osex, data=df_demo_and_fascicles)
+   #gam, anxiety_dose    220.1      133.7   1.646    0.101    
+  anxietyGrouping_UF_L_gam <- gam(UF_L_vol ~ anxiety_dose + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
+  summary(anxietyGrouping_UF_L_gam)
+  
+  #UF_L anxiety_dose:         anxiety_dose     232.210    133.294   1.742   0.0823 .  
+  anxietyGrouping_UF_L_by_sex_lm <- lm(UF_L_vol ~ anxiety_dose + osex + PAT_AGE_AT_EXAM, data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_UF_L_by_sex_lm)
   
+   #gam, anxiety_dose    229.9      133.9   1.717   0.0868 .  
+  anxietyGrouping_UF_L_by_sex_gam <- gam(UF_L_vol ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
+  summary(anxietyGrouping_UF_L_by_sex_gam)
   
   
   #burden of anxiety by network
@@ -1320,17 +1373,10 @@ tibble_overall_summaries_by_sex <- df_disease_burden_unc_and_anx_net_collapsed_v
   df_empi_dx_network_proportions <- df_demo_and_fascicles %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == c("true_healthy", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep")) %>% 
-  #filter(oAnxietydx.Meds.Inc.Dep.Collapsed == c("healthy_ish", "Has.anxietydx")) %>%  #-> doesn't work
- # filter(oAnxietydx.Meds.Inc.Dep.Collapsed == c("healthy_ish", "On.Anxiolytics")) %>% #-> doesn't work
   mutate(subject = as.factor(EMPI)) %>%
   mutate(Diagnosis = oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed) %>%
   mutate(Diagnosis = ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="true_healthy", "MS-Anxiety", "MS+Anxiety")) %>%
   mutate(Diagnosis = as.factor(Diagnosis)) %>%
-  #mutate(Has.anxietydx = as.factor(Has.anxietydx)) %>%
-  #mutate(Anxiolytics_status = ifelse(On.Anxiolytics_no_beta_blocker==1, "On.Anxiolytics", "Off.Anxiolytics")) %>%
-  #mutate(Anxiolytics_status = as.factor(Anxiolytics_status)) %>%
-  ##mutate(Benzo_status = ifelse(On.Benzos==1, "On.Benzos", "Off.Benzos")) %>%
-  #mutate(Benzo_status = as.factor(Benzo_status)) %>%
   mutate(Anxiety_network = proportion_volume_lost_anxiety_net_by_network_size_sum_top_25) %>%
   mutate(Nonanxiety_network = proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75) %>%
   dplyr::select(subject, osex, Diagnosis, Anxiety_network, Nonanxiety_network, PAT_AGE_AT_EXAM, UF_R_vol, UF_L_vol) %>% 
@@ -1349,59 +1395,66 @@ summary(within_vs_outside_anxiety_net_t)
 between_dx_t <- t.test(df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Diagnosis == "MS+Anxiety"], df_empi_dx_network_proportions$proportion_affected[df_empi_dx_network_proportions$Diagnosis == "MS-Anxiety"])
 summary(between_dx_t)
 
-#means
+######means
 
-#mean = 0.5381082
+#mean = 0.5665159
 mean_anxiety_dx_anx_net <- mean(df_empi_dx_network_proportions$proportion_affected[which(df_empi_dx_network_proportions$Diagnosis == "MS+Anxiety" & df_empi_dx_network_proportions$Network == "Anxiety_network")])
 mean_anxiety_dx_anx_net
 
-#mean = 0.2681277
+#mean = 0.310777
 mean_anxiety_dx_nonanx_net <- mean(df_empi_dx_network_proportions$proportion_affected[which(df_empi_dx_network_proportions$Diagnosis == "MS+Anxiety" & df_empi_dx_network_proportions$Network == "Nonanxiety_network")])
 mean_anxiety_dx_nonanx_net
 
-#mean = 0.4762486
+#mean =  0.4652665
 mean_nonanxiety_dx_anx_net <- mean(df_empi_dx_network_proportions$proportion_affected[which(df_empi_dx_network_proportions$Diagnosis == "MS-Anxiety" & df_empi_dx_network_proportions$Network == "Anxiety_network")])
 mean_nonanxiety_dx_anx_net
 
-#mean = 0.2444919
+#mean = 0.2106967
 mean_nonanxiety_dx_nonanx_net <- mean(df_empi_dx_network_proportions$proportion_affected[which(df_empi_dx_network_proportions$Diagnosis == "MS-Anxiety" & df_empi_dx_network_proportions$Network == "Nonanxiety_network")])
 mean_nonanxiety_dx_nonanx_net
 
  #simple lmer
-disease_within_vs_outside_anxiety_net_by_dx_groups_lmer <- lmer(proportion_affected ~ Network*Diagnosis + (1|subject), data = df_empi_dx_network_proportions)
+
+##NetworkNonanxiety_network                      -0.254570   0.013575  92.000000 -18.753  < 2e-16 ***
+##DiagnosisMS+Anxiety                             0.108710   0.040130 103.092356   2.709  0.00791 ** 
+disease_within_vs_outside_anxiety_net_by_dx_groups_lmer <- lmer(proportion_affected ~ Network*Diagnosis + (1|subject) + PAT_AGE_AT_EXAM, data = df_empi_dx_network_proportions)
 summary(disease_within_vs_outside_anxiety_net_by_dx_groups_lmer)
 
 #Network confit:NetworkNonanxiety_network -0.2496593 -0.23419230
 confint(disease_within_vs_outside_anxiety_net_by_dx_groups_lmer)
 
-#do anova instead
+###do anova instead
+##Network             1  3.059  3.0587  82.472  < 2e-16 ***
+##Diagnosis           1  0.473  0.4728  12.749 0.000455 ***
 
-disease_within_vs_outside_anxiety_net_by_dx_groups_anova <- aov(proportion_affected ~ Network+Diagnosis + Network:Diagnosis, data = df_empi_dx_network_proportions)
+disease_within_vs_outside_anxiety_net_by_dx_groups_anova <- aov(proportion_affected ~ Network+Diagnosis + Network:Diagnosis + PAT_AGE_AT_EXAM, data = df_empi_dx_network_proportions)
 summary(disease_within_vs_outside_anxiety_net_by_dx_groups_anova)
 
 #do lm UF*Diagnosis
- #UF_R_vol -> NS
-disease_UF_R_vol_lm <- lm(UF_R_vol ~ Diagnosis, data = df_empi_dx_network_proportions)
+ #UF_R_vol -> DiagnosisMS+Anxiety  1406.32     350.74   4.010 8.81e-05 ***
+disease_UF_R_vol_lm <- lm(UF_R_vol ~ Diagnosis + PAT_AGE_AT_EXAM, data = df_empi_dx_network_proportions)
 summary(disease_UF_R_vol_lm)
 
- #UF_L_vol -> NS
-disease_UF_L_vol_lm <- lm(UF_L_vol ~ Diagnosis, data = df_empi_dx_network_proportions)
+ #UF_L_vol -> DiagnosisMS+Anxiety   728.93     249.71   2.919  0.00395 ** 
+disease_UF_L_vol_lm <- lm(UF_L_vol ~ Diagnosis + PAT_AGE_AT_EXAM, data = df_empi_dx_network_proportions)
 summary(disease_UF_L_vol_lm)
 
-## sex diff
-
+############## sex diff
+#df_anxiety_disorder_by_sex <- 
 
 ## net by sex 
- #simple lmer
-disease_within_vs_outside_anxiety_net_by_sex_diff_lmer <- lmer(proportion_affected ~ Network*osex + (1|subject), data = df_empi_dx_network_proportions)
-summary(disease_within_vs_outside_anxiety_net_by_sex_diff_lmer)
+
+#simple lmer
+#NetworkNonanxiety_network         -0.250361   0.011772  92.000001 -21.268  < 2e-16 ***
+  disease_within_vs_outside_anxiety_net_by_sex_diff_lmer <- lmer(proportion_affected ~ Network*osex + (1|subject) + PAT_AGE_AT_EXAM, data = df_empi_dx_network_proportions)
+  summary(disease_within_vs_outside_anxiety_net_by_sex_diff_lmer)
 
 #Network confit:
 confint(disease_within_vs_outside_anxiety_net_by_sex_diff_lmer)
 
 ## diagnosis by sex 
- #simple lmer
-disease_diagnosis_by_sex_diff_lm <- lm(proportion_affected ~ Diagnosis*osex, data = df_empi_dx_network_proportions)
+ #simple lmer, DiagnosisMS+Anxiety         0.124327   0.040488   3.071  0.00246 **
+disease_diagnosis_by_sex_diff_lm <- lm(proportion_affected ~ Diagnosis*osex+ PAT_AGE_AT_EXAM, data = df_empi_dx_network_proportions)
 summary(disease_diagnosis_by_sex_diff_lm)
 
 #Network confit:
@@ -1409,12 +1462,143 @@ confint(disease_diagnosis_by_sex_diff_lm)
 
 
 #network * diagnosis + sex
- #simple lmer
-disease_within_vs_outside_anxiety_net_by_dx_groups_sex_diff_lmer <- lmer(proportion_affected ~ Network*Diagnosis + osex + (1|subject), data = df_empi_dx_network_proportions)
+ #simple lmer: NetworkNonanxiety_network                      -0.254570   0.013575  92.000000 -18.753  < 2e-16 ***
+ ##DiagnosisMS+Anxiety                             0.107571   0.040361 101.820059   2.665  0.00895 ** 
+disease_within_vs_outside_anxiety_net_by_dx_groups_sex_diff_lmer <- lmer(proportion_affected ~ Network*Diagnosis + osex + (1|subject)+ PAT_AGE_AT_EXAM, data = df_empi_dx_network_proportions)
 summary(disease_within_vs_outside_anxiety_net_by_dx_groups_sex_diff_lmer)
 
 #Network confit:NetworkNonanxiety_network -0.2496593 -0.23419230
 confint(disease_within_vs_outside_anxiety_net_by_dx_groups_sex_diff_lmer)
+
+
+
+###### Sex differences - NONE. important because anxiety dx usually have differences
+
+## in anxiety diagnosis
+
+#####FIRST, SEX DIFF IN FREQUENCY OF ILLNESS - no diff between groups
+
+#first number is # with anxiety, second is number without anxiety
+anxiety_female_0 <-df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(anxiety_dose == 0 & osex == "Female") %>% count()
+anxiety_total_0 <-df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(anxiety_dose == 0) %>% count()
+anxiety_female_1 <-df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(anxiety_dose == 1 & osex == "Female") %>% count()
+anxiety_total_1 <-df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(anxiety_dose == 1) %>% count()
+anxiety_female_2 <- df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(anxiety_dose == 2 & osex == "Female") %>% count()
+anxiety_total_2 <- df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(anxiety_dose == 2) %>% count()
+
+#make table
+num_w_anxiety_female <- as.numeric(c(anxiety_female_0, anxiety_female_1, anxiety_female_2))
+num_total <-as.numeric(c(anxiety_total_0,anxiety_total_1, anxiety_total_2))
+df_2x3_anxiety_score_by_total_people_per_diagnosis <- data.frame(cbind(num_w_anxiety_female, num_total), row.names = c("MS+AnxietyandMed", "MS+AnxietyorMed", "MS-Anxiety"))
+
+#X-squared (Pearson's) X-squared = 0.19886, df = 2, p-value = 0.9054
+chisq_anxiety_dose <- chisq.test(df_2x3_anxiety_score_by_total_people_per_diagnosis)
+chisq_anxiety_dose
+
+#just healthy and super anxious/sick, X-squared = 0.056046, df = 1, p-value = 0.8129
+num_w_anxiety_female_just_healthy_and_sick <- as.numeric(c(anxiety_female_0, anxiety_female_2))
+num_total_just_healthy_and_sick <-as.numeric(c(anxiety_total_0,anxiety_total_2))
+df_2x2_anxiety_score_by_total_people_per_diagnosis_num_total_just_healthy_and_sick <- data.frame(cbind(num_w_anxiety_female_just_healthy_and_sick, num_total_just_healthy_and_sick), row.names = c("MS+AnxietyandMed", "MS-Anxiety"))
+
+chisq_healthy_vs_sick <- chisq.test(df_2x2_anxiety_score_by_total_people_per_diagnosis_num_total_just_healthy_and_sick)
+chisq_healthy_vs_sick
+
+
+
+
+
+#frequency_diff_between_sexes <- chisq.test(df_demo_and_fascicles$Has.Anxietydx.AND.Antianxietymed, df_demo_and_fascicles$osex)
+
+#simple lmer across whole network
+
+#overall - NS
+disease_between_sexes <- lm(proportion_volume_lost_per_total_network_size_sum ~ osex+ PAT_AGE_AT_EXAM, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
+summary(disease_between_sexes)
+
+### anxiety net NS
+disease_between_sexes_anxiety_net <- lm(proportion_volume_lost_anxiety_net_by_network_size_sum ~ osex+ PAT_AGE_AT_EXAM, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
+summary(disease_between_sexes_anxiety_net)
+
+### nonanxiety net - NS
+disease_between_sexes_nonanxiety_net <- lm(proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75 ~ osex+ PAT_AGE_AT_EXAM, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
+summary(disease_between_sexes_nonanxiety_net)
+
+#uncinate R- NS
+disease_between_sexes_UF_R <- lm(UF_R_vol ~ osex+ PAT_AGE_AT_EXAM, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
+summary(disease_between_sexes_UF_R)
+
+#uncinate L - ns
+disease_between_sexes_UF_L <- lm(UF_L_vol ~ osex+ PAT_AGE_AT_EXAM, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
+summary(disease_between_sexes_UF_L)
+
+
+### diagnosis by age interaction?
+#overall - NS
+diagnosis_by_age <- lm(proportion_volume_lost_per_total_network_size_sum ~ anxiety_dose*PAT_AGE_AT_EXAM, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
+summary(diagnosis_by_age)
+
+#gam
+diagnosis_by_age_gam <- gam(proportion_volume_lost_per_total_network_size_sum ~ anxiety_dose+s(PAT_AGE_AT_EXAM, by = anxiety_dose), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
+summary(diagnosis_by_age_gam)
+summary(diagnosis_by_age_gam)$s.table
+plot(diagnosis_by_age_gam)
+
+####. within/outside anxiety network #######
+#dose
+diagnosis_by_age_anx_net_gam <- gam(proportion_volume_lost_anxiety_net_by_network_size_sum_top_25 ~ anxiety_dose+s(PAT_AGE_AT_EXAM, by = anxiety_dose), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
+summary(diagnosis_by_age_anx_net_gam)
+summary(diagnosis_by_age_anx_net_gam)$s.table
+plot(diagnosis_by_age_anx_net_gam)
+
+#factor
+diagnosis_by_age_anx_net_gam_factor <- gam(proportion_volume_lost_anxiety_net_by_network_size_sum_top_25 ~ as.factor(anxiety_dose)+s(PAT_AGE_AT_EXAM, by = as.factor(anxiety_dose)), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
+summary(diagnosis_by_age_anx_net_gam_factor)
+summary(diagnosis_by_age_anx_net_gam_factor)$s.table
+plot(diagnosis_by_age_anx_net_gam_factor)
+
+##### #outside each network
+
+##dose
+diagnosis_by_age_nonanx_net_gam <- gam(proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75 ~ anxiety_dose+s(PAT_AGE_AT_EXAM, by = anxiety_dose), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
+summary(diagnosis_by_age_nonanx_net_gam)
+summary(diagnosis_by_age_nonanx_net_gam)$s.table
+plot(diagnosis_by_age_nonanx_net_gam)
+
+#factor
+
+diagnosis_by_age_nonanx_net_gam_factor <- gam(proportion_volume_lost_nonanxiety_net_by_network_size_sum_bottom_75 ~ as.factor(anxiety_dose)+s(PAT_AGE_AT_EXAM, by = as.factor(anxiety_dose)), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
+summary(diagnosis_by_age_nonanx_net_gam_factor)
+summary(diagnosis_by_age_nonanx_net_gam_factor)$s.table
+plot(diagnosis_by_age_nonanx_net_gam_factor)
+
+
+### uncinate right
+
+#dose
+diagnosis_by_age_UF_R_gam <- gam(UF_R_vol ~ anxiety_dose+s(PAT_AGE_AT_EXAM, by = anxiety_dose), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
+summary(diagnosis_by_age_UF_R_gam)
+summary(diagnosis_by_age_UF_R_gam)$s.table
+plot(diagnosis_by_age_UF_R_gam)
+
+#factor
+diagnosis_by_age_UF_R_gam_factor <- gam(UF_R_vol ~ as.factor(anxiety_dose)+s(PAT_AGE_AT_EXAM, by = as.factor(anxiety_dose)), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
+summary(diagnosis_by_age_UF_R_gam_factor)
+summary(diagnosis_by_age_UF_R_gam_factor)$s.table
+plot(diagnosis_by_age_UF_R_gam_factor)
+
+#uncinate left
+#dose
+diagnosis_by_age_UF_L_gam <- gam(UF_L_vol ~ anxiety_dose+s(PAT_AGE_AT_EXAM, by = anxiety_dose), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
+summary(diagnosis_by_age_UF_L_gam)
+summary(diagnosis_by_age_UF_L_gam)$s.table
+plot(diagnosis_by_age_UF_L_gam)
+
+#factor
+diagnosis_by_age_UF_L_gam_factor <- gam(UF_L_vol ~ as.factor(anxiety_dose)+s(PAT_AGE_AT_EXAM, by = as.factor(anxiety_dose)), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
+summary(diagnosis_by_age_UF_L_gam_factor)
+summary(diagnosis_by_age_UF_L_gam_factor)$s.table
+plot(diagnosis_by_age_UF_L_gam_factor)
+
 
 ```
 

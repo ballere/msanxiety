@@ -179,7 +179,8 @@ data_final_rds <-data_pull %>%
   mutate(anxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed = str_replace_all(oAnxietydx.Meds.And.Dep.True.Healthy.Collapsed, c("Has.anxietydx" = "Has.Anxietydx.OR.Antianxiety.Meds","On.Anxiolytics" = "Has.Anxietydx.OR.Antianxiety.Meds"))) %>% ##combine people who have either anxiety or are on anxiety meds
   mutate(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed = ordered(anxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, levels = c("true_healthy", "Has.Anxietydx.OR.Antianxiety.Meds", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep", "unclassified"))) %>%
   
-  
+  # anxiety dose
+  mutate(anxiety_dose = (as.numeric(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed) -1)) %>% #anxiety dose is 0 (no anxiety dx), 1 (anxietydx or anxiety meds), 2 (anxiety + anxiety meds), so take the factor and subtract 1
   ungroup() #n=3,737 unique people, n= 16,830 total
 
 saveRDS(data_final_rds, file = output_file)
