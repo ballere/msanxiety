@@ -27,6 +27,72 @@ require('circlize')
 #############################
 
 #### anxiety demographics
+
+make_demographics_table_ms_anxiety_simple<- function(data_frame) {
+  #subset demographics
+  
+  listVars <- c("Race", 
+                "Sex",
+                "Age",
+                "Has.anxietydx", 
+                "On.Anxiolytics",
+                "oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed",
+                "anxiety_dose",
+                "on_anti_cd20",
+                "on_interferon",
+                "on_steroids",
+                "on_dmt",
+                "PHQ2",
+                "PHQ9",
+                "volume_of_mimosa_lesions", 
+                "mean_UF_vol",
+                "proportion_volume_lost_per_total_network_size_sum") #Race 1 = caucasian, Sex 1 = M age = years
+  
+  
+  #for_parse <- paste0("data.frame(data_frame$race_binarized, data_frame$sex_binarized, data_frame$PAT_AGE_AT_EXAM, data_frame$depGroupVar, data_frame$PHQ.2, data_frame$PHQ.9)")
+  for_parse <- paste0("data.frame(data_frame$RACE, 
+ # for_parse <- paste0("data.frame(data_frame$race_binarized,
+                      data_frame$sex_binarized, 
+                      data_frame$PAT_AGE_AT_EXAM, 
+                      data_frame$Has.anxietydx, 
+                      data_frame$On.Anxiolytics,
+                      data_frame$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed,
+                      data_frame$anxiety_dose,
+                      data_frame$On.Anti_cd20,
+                      data_frame$On.Interferon,
+                      data_frame$On.Steroids,
+                      data_frame$On.Dmt,
+                      data_frame$PHQ.2, 
+                      data_frame$PHQ.9, 
+                      data_frame$volume_of_mimosa_lesions, 
+                      data_frame$mean_UF_vol,
+                      data_frame$proportion_volume_lost_per_total_network_size_sum)")
+  
+  
+  demo <- eval(parse(text = for_parse)) 
+  names(demo) <- c(listVars)
+  
+  #Change categorical values to have names
+  
+  ### uncomment the line below if you want to binarize race
+  # demo$Race <- ifelse(demo$Race == 1, "Caucasian", "Non-caucasian")
+  demo$Sex <- ifelse(demo$Sex == 1, "Male", "Female")
+  
+  
+  
+  #Define Categorical Variables
+  cat_variables <- c("Race", "Sex", "oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed", "Has.anxietydx","On.Anxiolytics","on_anti_cd20", "on_interferon", "on_steroids", "on_dmt")
+  title <- c(paste0("Demographics_Anxiety"))
+  
+ 
+  #Groups - true healthy, anxiety OR anti anxiety meds, anxiety AND antianxiety meds
+  demo_table_by_on_depAndAnxiety_true_healthy <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed"))
+  print(demo_table_by_on_depAndAnxiety_true_healthy , showAllLevels = TRUE)
+  
+  
+  
+}
+
 make_demographics_table_ms_anxiety<- function(data_frame) {
   #subset demographics
   
