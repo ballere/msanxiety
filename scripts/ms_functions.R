@@ -50,8 +50,8 @@ make_demographics_table_ms_anxiety_simple<- function(data_frame) {
   
   
   #for_parse <- paste0("data.frame(data_frame$race_binarized, data_frame$sex_binarized, data_frame$PAT_AGE_AT_EXAM, data_frame$depGroupVar, data_frame$PHQ.2, data_frame$PHQ.9)")
+  # for_parse <- paste0(data.frame(data_frame$race_binarized,
   for_parse <- paste0("data.frame(data_frame$RACE, 
- # for_parse <- paste0("data.frame(data_frame$race_binarized,
                       data_frame$sex_binarized, 
                       data_frame$PAT_AGE_AT_EXAM, 
                       data_frame$Has.anxietydx, 

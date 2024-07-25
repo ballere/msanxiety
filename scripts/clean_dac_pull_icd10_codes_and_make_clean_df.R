@@ -88,7 +88,10 @@ psych_meds <- read.csv("/Users/eballer/BBL/medication_data/nami_psych_meds_antid
 psych_meds$Medication.Name <- toupper(psych_meds$Medication.Name)
 
 #depression/psych meds from NAMI website + neurontin, gabapentin, elavil, amitriptyline
-psych_meds_extended <- read.csv("/Users/eballer/BBL/medication_data/nami_psych_meds_antidepressants_plus_gabapentin_and_amitriptyline.csv", sep = ",", header = TRUE)
+#psych_meds_extended <- read.csv("/Users/eballer/BBL/medication_data/nami_psych_meds_antidepressants_plus_gabapentin_and_amitriptyline.csv", sep = ",", header = TRUE)
+
+#psych meds from NAMI + medications used for anxiety (neurontin/gabapentin, elavil/amitriptyline, propranolol, nortriptyline/pamelor)
+psych_meds_extended <- read.csv("/Users/eballer/BBL/medication_data/nami_psych_meds_antidepressants_plus_gabapentin_and_amitriptyline_benzos_beta_blockers.csv", sep = ",", header = TRUE)
 psych_meds_extended$Medication.Name <- toupper(psych_meds_extended$Medication.Name)
 
 
@@ -169,19 +172,24 @@ data_final_rds <-data_pull %>%
   mutate(oAnxietydx.Meds.Inc.Dep.Collapsed = ordered(Anxietydx.Meds.And.Dep.Collapsed, levels = c("healthy_ish", "Has.anxietydx", "On.Anxiolytics", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep", "unclassified"))) %>%
   
   #make groups with true healthy to try to pull out the best patients
-  mutate(Anxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar = ifelse((true_healthy==1), 1, ifelse(((Has.Depression.And.Anxiety==1) & (On.Anxiolytics==1)), 5, ifelse((Has.Anxietydx.AND.Antianxietymed==1), 4, ifelse((On.Anxiolytics==1), 3, ifelse((Has.anxietydx == 1), 2, 0)))))) %>% #healthy = 1, anxiety alone = 2, on.anxiolytics = 3, anxiety and anxiety meds = 4, dep and anxiety and on anxiolytics = 5, do these in reverse order because of the conditional evaluation
-  mutate(oAnxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar = ordered(Anxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar, levels = c(1,2,3,4,5,0), labels = c("true_healthy", "Has.anxietydx", "On.Anxiolytics", "Has.Anxietydx.AND.Antianxietymed", "Has.Anxiety.Dep.AND.On.Anxietymeds", "unclassified"))) %>% #healthy = 1, anxiety alone = 2, on.anxiolytics = 3, anxiety and anxiety meds = 4, dep and anxiety and on anxiolytics = 5
-  mutate(Anxietydx.Meds.And.Dep.True.Healthy.Collapsed = oAnxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar) %>% #copy values from oanxiety_group
-  mutate(Anxietydx.Meds.And.Dep.True.Healthy.Collapsed = str_replace_all(Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, c("Has.Anxiety.Dep.AND.On.Anxietymeds" = "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep","Has.Anxietydx.AND.Antianxietymed" = "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep"))) %>% ##combine people who have depression and anxiety 
-  mutate(oAnxietydx.Meds.And.Dep.True.Healthy.Collapsed = ordered(Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, levels = c("true_healthy", "Has.anxietydx", "On.Anxiolytics", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep", "unclassified"))) %>%
+ # mutate(Anxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar = ifelse((true_healthy==1), 1, ifelse(((Has.Depression.And.Anxiety==1) & (On.Anxiolytics==1)), 5, ifelse((Has.Anxietydx.AND.Antianxietymed==1), 4, ifelse((On.Anxiolytics==1), 3, ifelse((Has.anxietydx == 1), 2, 0)))))) %>% #healthy = 1, anxiety alone = 2, on.anxiolytics = 3, anxiety and anxiety meds = 4, dep and anxiety and on anxiolytics = 5, do these in reverse order because of the conditional evaluation
+ # mutate(Anxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar = ifelse((true_healthy==1), 1, ifelse(((depGroupVar==2) & (On.Anxiolytics==1) & (Has.anxietydx=1)), 5, ifelse((Has.Anxietydx.AND.Antianxietymed==1), 4, ifelse((On.Anxiolytics==1), 3, ifelse((Has.anxietydx == 1), 2, 0)))))) %>% #healthy = 1, anxiety alone = 2, on.anxiolytics = 3, anxiety and anxiety meds = 4, dep and anxiety and on anxiolytics = 5, do these in reverse order because of the conditional evaluation
+ # mutate(oAnxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar = ordered(Anxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar, levels = c(1,2,3,4,5,0), labels = c("true_healthy", "Has.anxietydx", "On.Anxiolytics", "Has.Anxietydx.AND.Antianxietymed", "Has.Anxiety.Dep.AND.On.Anxietymeds", "unclassified"))) %>% #healthy = 1, anxiety alone = 2, on.anxiolytics = 3, anxiety and anxiety meds = 4, dep and anxiety and on anxiolytics = 5
+#  mutate(Anxietydx.Meds.And.Dep.True.Healthy.Collapsed = oAnxiety.And.Dep.And.AnxietyMeds.TrueHealthy.GroupVar) %>% #copy values from oanxiety_group
+#  mutate(Anxietydx.Meds.And.Dep.True.Healthy.Collapsed = str_replace_all(Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, c("Has.Anxiety.Dep.AND.On.Anxietymeds" = "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep","Has.Anxietydx.AND.Antianxietymed" = "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep"))) %>% ##combine people who have depression and anxiety 
+#  mutate(oAnxietydx.Meds.And.Dep.True.Healthy.Collapsed = ordered(Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, levels = c("true_healthy", "Has.anxietydx", "On.Anxiolytics", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep", "unclassified"))) %>%
   
   #combine people with anxiety OR on anxiety meds 
-  mutate(anxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed = str_replace_all(oAnxietydx.Meds.And.Dep.True.Healthy.Collapsed, c("Has.anxietydx" = "Has.Anxietydx.OR.Antianxiety.Meds","On.Anxiolytics" = "Has.Anxietydx.OR.Antianxiety.Meds"))) %>% ##combine people who have either anxiety or are on anxiety meds
-  mutate(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed = ordered(anxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, levels = c("true_healthy", "Has.Anxietydx.OR.Antianxiety.Meds", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep", "unclassified"))) %>%
+ # mutate(anxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed = str_replace_all(oAnxietydx.Meds.And.Dep.True.Healthy.Collapsed, c("Has.anxietydx" = "Has.Anxietydx.OR.Antianxiety.Meds","On.Anxiolytics" = "Has.Anxietydx.OR.Antianxiety.Meds"))) %>% ##combine people who have either anxiety or are on anxiety meds
+   mutate(anxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed = ifelse((true_healthy==1), 1, ifelse((Has.Anxietydx.AND.Antianxietymed==1), 3, ifelse((On.Anxiolytics==1 | Has.anxietydx == 1), 2, 0)))) %>% #healthy = 1, anxiety alone + meds = 3, on.anxiolytics or anxiety meds = 2, unclassified = 0
+  
+   mutate(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed = ordered(anxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, levels = c(1,2,3,0), labels = c("true_healthy", "Has.Anxietydx.OR.Antianxiety.Meds", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep", "unclassified"))) %>%
   
   # anxiety dose
-  mutate(anxiety_dose = (as.numeric(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed) -1)) %>% #anxiety dose is 0 (no anxiety dx), 1 (anxietydx or anxiety meds), 2 (anxiety + anxiety meds), so take the factor and subtract 1
-  ungroup() #n=3,737 unique people, n= 16,830 total
+  mutate(anxiety_dose = (as.numeric(anxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed) -1)) %>% #anxiety dose is 0 (no anxiety dx), 1 (anxietydx or anxiety meds), 2 (anxiety + anxiety meds), so take the factor and subtract 1
+  ungroup() #n=4,957 unique people, n= 51,238 total
+
+
 
 saveRDS(data_final_rds, file = output_file)
 
