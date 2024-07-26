@@ -969,6 +969,9 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
 
     anxietyGrouping_mean_UF_by_sex_gam <- gam(mean_UF_vol ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = F), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_mean_UF_by_sex_gam)
+ 
+  
+
 ```
 
 ##### Laterality in uncinate
@@ -1601,22 +1604,41 @@ fascicle_lm <- lapply(fascicle_names_w_prop_suffix, function(x)
 names(fascicle_lm) <- fascicle_names_w_prop_suffix
 
 #anova
-fascicle_anova <- lapply(fascicle_lm, anova)
+fascicle_lm_anova <- lapply(fascicle_lm, anova)
 
-
-#fdr corrected
-fascicle_anova_fdr <- fdr_anova_generic(fascicle_anova, 1)
-print(fascicle_anova_fdr)
-
-#fdr corrected only association cortex
-#fascicle_anova_w_fiber_mapping <- fascicle_agesex_anova[which(fascicle_bundle_mapping$name_vector == "association")]
-##fascicle_anova_fdr_association <- fdr_anova_generic(fascicle_anova_w_fiber_mapping,1)
-#print(fascicle_anova_fdr_association)
 
 #uncorrected
-fascicle_anova_p <- sapply(fascicle_anova, function(v) v$"Pr(>F)"[1])
-fascicle_anova_p05_unc <- as.data.frame(fascicle_anova_p[fascicle_anova_p < 0.05])
-print(fascicle_anova_p05_unc) 
+fascicle_anova_lm_p <- sapply(fascicle_lm_anova, function(v) v$"Pr(>F)"[1])
+fascicle_anova_lm_p05_unc <- as.data.frame(fascicle_anova_lm_p[fascicle_anova_lm_p < 0.05])
+print(fascicle_anova_lm_p05_unc) 
+
+#fdr corrected
+fascicle_anova_lm_fdr <- fdr_anova_generic(fascicle_lm_anova, 1, print_unc_df = TRUE)
+print(fascicle_anova_lm_fdr)
+
+
+
+#gam
+fascicle_gam <- lapply(fascicle_names_w_prop_suffix, function(x) 
+{
+  gam(substitute(i ~ anxiousAndMeds_or_healthy + +osex+ s(PAT_AGE_AT_EXAM, k=4, fx=F), list(i = as.name(x))), data = df_demo_and_fascicles_no_unclass_anxiety_dose)
+})
+names(fascicle_gam) <- fascicle_names_w_prop_suffix
+
+#anova
+fascicle_anova_gam <- lapply(fascicle_gam, anova)
+
+
+#uncorrected
+fascicle_anova_gam_p <- sapply(fascicle_anova_gam, function(v) v$p.pv[2])
+print(as.data.frame(fascicle_anova_gam_p))
+fascicle_anova_gam_p05_unc <- as.data.frame(fascicle_anova_gam_p[fascicle_anova_gam_p < 0.05])
+print(fascicle_anova_gam_p05_unc) 
+
+#fdr corrected
+fascicle_anova_gam_fdr <- round(p.adjust(fascicle_anova_gam_p, method = "fdr"),3)
+fascicle_anova_gam_fdr_p05 <- as.data.frame(fascicle_anova_gam_fdr[fascicle_anova_gam_fdr < 0.05])
+print(fascicle_anova_gam_fdr_p05) 
 ```
 
 #### Parametric all fascicles
@@ -1625,35 +1647,55 @@ print(fascicle_anova_p05_unc)
 ### 3 meet FDR - C_FPH_R_prop	0.037			C_FP_R_prop	0.042			DRTT_R_prop	0.042
 df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
-  filter(anxiety_dose != 3) %>%
+  filter(anxiety_dose != -1) %>%
   mutate(anxiety_dose_factor = ordered(anxiety_dose))
 
 #lm
 fascicle_lm <- lapply(fascicle_names_w_prop_suffix, function(x) 
 {
-  lm(substitute(i ~ oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed + PAT_AGE_AT_EXAM, list(i = as.name(x))), data = df_demo_and_fascicles_no_unclass_anxiety_dose)
+  lm(substitute(i ~ anxiety_dose + PAT_AGE_AT_EXAM, list(i = as.name(x))), data = df_demo_and_fascicles_no_unclass_anxiety_dose)
 })
 names(fascicle_lm) <- fascicle_names_w_prop_suffix
 
 #anova
-fascicle_anova <- lapply(fascicle_lm, anova)
+fascicle_anova_lm <- lapply(fascicle_lm, anova)
 
 
 #fdr corrected
-fascicle_anova_fdr <- fdr_anova_generic(fascicle_anova, 1)
-print(fascicle_anova_fdr)
-
-#fdr corrected only association cortex
-#fascicle_anova_w_fiber_mapping <- fascicle_agesex_anova[which(fascicle_bundle_mapping$name_vector == "association")]
-##fascicle_anova_fdr_association <- fdr_anova_generic(fascicle_anova_w_fiber_mapping,1)
-#print(fascicle_anova_fdr_association)
+fascicle_anova_lm_fdr <- fdr_anova_generic(fascicle_lm_anova, 1, print_unc_df = TRUE)
+print(fascicle_anova_lm_fdr)
 
 #uncorrected
-fascicle_anova_p <- sapply(fascicle_anova, function(v) v$"Pr(>F)"[1])
-fascicle_anova_p05_unc <- as.data.frame(fascicle_anova_p[fascicle_anova_p < 0.05])
-print(fascicle_anova_p05_unc) 
+fascicle_anova_lm_p <- sapply(fascicle_anova_lm, function(v) v$"Pr(>F)"[1])
+fascicle_anova_lm_p05_unc <- as.data.frame(fascicle_anova_lm_p[fascicle_anova_lm_p < 0.05])
+print(fascicle_anova_lm_p05_unc) 
+
+#gam
+fascicle_gam <- lapply(fascicle_names_w_prop_suffix, function(x) 
+{
+  print(x)
+  gam(substitute(i ~ anxiety_dose + osex+s(PAT_AGE_AT_EXAM, k=4, fx=F), list(i = as.name(x))), data = df_demo_and_fascicles_no_unclass_anxiety_dose)
+})
+names(fascicle_gam) <- fascicle_names_w_prop_suffix
+
+  
+
+#anova
+fascicle_anova_gam <- lapply(fascicle_gam, anova)
+
+
+#uncorrected
+fascicle_anova_gam_p <- sapply(fascicle_anova_gam, function(v) v$p.pv[2])
+print(as.data.frame(fascicle_anova_gam_p))
+fascicle_anova_gam_p05_unc <- as.data.frame(fascicle_anova_gam_p[fascicle_anova_gam_p < 0.05])
+print(fascicle_anova_gam_p05_unc) 
+
+#fdr corrected
+fascicle_anova_gam_fdr <- round(p.adjust(fascicle_anova_gam_p, method = "fdr"),3)
+fascicle_anova_gam_fdr_p05 <- as.data.frame(fascicle_anova_gam_fdr[fascicle_anova_gam_fdr < 0.05])
+print(fascicle_anova_gam_fdr_p05) 
 ```
-#### Parametric anxiety net fascicles
+#### Parametric anxiety net fascicles -> needs GAM
 ```{r indiv_fascicle_anxiety_net_anxiety_dose}
 
 ## 3 meet FDR - EMC_L_prop	0.0320914948			C_PHP_R_prop	0.0265819790			C_FPH_R_prop	0.0004861282	
@@ -1677,18 +1719,13 @@ fascicle_anova <- lapply(fascicle_lm, anova)
 fascicle_anova_fdr <- fdr_anova_generic(fascicle_anova, 1)
 print(fascicle_anova_fdr)
 
-#fdr corrected only association cortex
-#fascicle_anova_w_fiber_mapping <- fascicle_agesex_anova[which(fascicle_bundle_mapping$name_vector == "association")]
-##fascicle_anova_fdr_association <- fdr_anova_generic(fascicle_anova_w_fiber_mapping,1)
-#print(fascicle_anova_fdr_association)
-
 #uncorrected
 fascicle_anova_p <- sapply(fascicle_anova, function(v) v$"Pr(>F)"[1])
 fascicle_anova_p05_unc <- as.data.frame(fascicle_anova_p[fascicle_anova_p < 0.05])
 print(fascicle_anova_p05_unc) 
 ```
 
-#### Parametric nonanxiety net fascicles
+#### Parametric nonanxiety net fascicles --> Needs gam
 ```{r nonanxiety_net_anxiety_dose}
 
 # 2 FDR corr sig: C_FP_R_prop	0.048			DRTT_R_prop	0.048

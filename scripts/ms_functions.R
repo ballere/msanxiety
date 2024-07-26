@@ -1125,7 +1125,7 @@ cohen_d_allpairs <- function(data_frame, measure, hydra_cluster) {
 }
 
 
-fdr_anova <- function(data_frame) {
+fdr_anova <- function(data_frame, print_unc_df = FALSE) {
   models_anova <- lapply(data_frame, summary)
   
   #Pull p-values
@@ -1136,7 +1136,9 @@ fdr_anova <- function(data_frame) {
   
   #print BEFORE FDR correction 
   #print("Anova scores, BEFORE FDR correction: i.e., uncorrected")
-  print(p_anova)
+  if (print_unc_df == TRUE){
+    print(p_anova)
+  }
   
   #Print original p-values to three decimal places
   p_round_anova <- round(p_anova,3)
@@ -1166,7 +1168,7 @@ fdr_anova <- function(data_frame) {
   
 }
 
-fdr_anova_generic <- function(data_frame, item_index ) {
+fdr_anova_generic <- function(data_frame, item_index, print_unc_df = FALSE) {
   models_anova <- lapply(data_frame, summary)
   
   #Pull p-values
@@ -1177,7 +1179,9 @@ fdr_anova_generic <- function(data_frame, item_index ) {
   
   #print BEFORE FDR correction 
   #print("Anova scores, BEFORE FDR correction: i.e., uncorrected")
-  print(p_anova)
+  if(print_unc_df == TRUE) {
+    print(p_anova)
+  }
   
   #Print original p-values to three decimal places
   p_round_anova <- round(p_anova,3)
