@@ -16,7 +16,7 @@ Theodore D. Satterthwaite and Russell T. Shinohara
 Audrey Luo
 
 ### Collaborators:
-Erica B. Baller, M.D., M.S., Matthew C. Cieslak, Ph.D., Elena C. Cooper, B.A., Matthew K. Schindler, M.D., Ph.D., Amit Bar-Or, M.D., Clyde E. Markowitz, Melissa Martin, B.A., Victoria Rautman, Donovan Reid, Russell T. Shinohara, Ph.D.^, Theodore D. Satterthwaite, M.D., M.A.^
+Erica B. Baller, M.D., M.S., Audrey Luo, B.A., Matthew C. Cieslak, Ph.D., Elena C. Cooper, B.A., Matthew K. Schindler, M.D., Ph.D., Amit Bar-Or, M.D., Clyde E. Markowitz, Melissa Martin, B.A., Victoria Rautman, Donovan Reid, Russell T. Shinohara, Ph.D.^, Theodore D. Satterthwaite, M.D., M.A.^
 ^shared last author
 
 ### Project Start Date:
