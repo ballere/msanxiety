@@ -129,7 +129,7 @@ After we obtained our sample, we used the Method for Intermodal Segmentation Ana
 
 Valcarcel AM, Linn KA, Vandekar SN, Satterthwaite TD, Muschelli J, Calabresi PA, Pham DL, Martin ML, Shinohara RT. MIMoSA: An Automated Method for Intermodal Segmentation Analysis of Multiple Sclerosis Brain Lesions. J Neuroimaging. 2018 Jul;28(4):389-398. [doi: 10.1111/jon.12506](https://pubmed.ncbi.nlm.nih.gov/29516669/). Epub 2018 Mar 8. PMID: 29516669; PMCID: PMC6030441.
 
-### Streamline Filtering
+### Streamline Filtering 
 Streamline filtering is an interative process performed in DSI studio. HCP template fib file can be found here [dsistudio Download: HCP1065 1-mm FIB file](https://brain.labsolver.org/hcp_template.html). Template is based on [HCP 2009a asymmetric](https://www.bic.mni.mcgill.ca/~vfonov/icbm/2009/).
 
 For each individual, the MIMoSA binary map was considered a region of interest. For each of the 77 fascicles, streamlines that ran through the lesion were "filtered" or kept, whereas the fascicles that avoided the MIMoSA mask were eliminated. Streamlines that passed through the MIMoSA map were then saved binary .nii files, where 1 indicated that disease was present in that voxel, and 0 indicated either 1) that fascicle did not cross through that voxel or 2) there was no disease in it. 
@@ -183,33 +183,28 @@ This specifically makes the fascicle injury ratio measure, calculated by taking 
 [roi_ratio_regressions.R](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/roi_ratio_regressions.R)
 
 #### Disease burden summary measures
-  Having computed disease measures at the individual fascicle, I wanted to look specifically at uncinate fasiculus, given previous literature suggesting that the uncinate is the main white matter fiber connecting mPFC and amygdala, core brain areas associated with anxiety disorders. 
+  Having computed disease measures at the individual fascicle, I wanted to look specifically at mean disease burden in uncinate fasiculus, given previous literature suggesting that the uncinate is the main white matter fiber connecting mPFC and amygdala, core brain areas associated with anxiety disorders. 
     
-  As a comparison, I also looked specifically at fornix, which is another subcortical fiber primarily involved in cognition/memory. 
-  
 #### Main effect of Diagnosis
 
-A gam with main effect of anxiety diagnosis (MS+noA vs MS+severeA), with sex and spline of age as covariates.
+A gam with mean_UF_vol as dependent variable, modeling main effect of anxiety diagnosis (MS+noA vs MS+severeA), with sex and spline of age as covariates.
+
+gam(mean_UF_vol ~ Diagnosis + osex+s(PAT_AGE_AT_EXAM, k = 4, fx = F), data = uncinate_by_dx_df)
 
 #### Parametric effect of anxiety "dose"
 
-A gam with main effect of anxiety dose (dose = 0 (MS+nA), 1 (MS+mildA), or 2 (MS+severeA)), with sex and spline of age as covariates.
+A gam with mean_UF_vol as dependent variable, modeling main effect of anxiety dose (dose = 0 (MS+nA), 1 (MS+mildA), or 2 (MS+severeA)), with sex and spline of age as covariates.
 
+gam(mean_UF_vol ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = F), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
 
-#### Coloring scripts for fascicle visualizations (to be fed into DSI studio)
+#### Sensitivity analyses
+  As a comparison, I also looked specifically at fornix, which is another subcortical fiber primarily involved in cognition/memory (N.S.) 
 
-*Sample script for making RGB scales in the red to yellow range*
+  gam(mean_fornix_volume ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
 
-[make_red_to_yellow_RGB_color_scheme.R](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/make_red_to_yellow_RGB_color_scheme.R)
-
-*Sample script for making binary color schemes, simple*
-
-[make_binary_colored_depression_net_maps.R](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/make_binary_colored_depression_net_maps.R)
-
-*Sample script for making binary color schemes, coloring by whether fascicle in vs. outside dep network*
-
-[make_binary_colored_depression_net_maps_by_dx.R](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/make_binary_colored_depression_net_maps_by_dx.R)
-
+  To test whether this was specific to anxiety diagnosis, I also evaluated mean uncinate volume in patients with MS+Depression (199) or MS+noDep (99) in this cohort (N.S.) 
+  
+  gam(mean_UF_vol ~ depDiagnosis + osex + s(PAT_AGE_AT_EXAM, k=4, fx=F), data = df_dep)
 
 ### Final group level analysis
 
