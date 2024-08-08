@@ -29,7 +29,7 @@ In progress
 Multiple Sclerosis Cohort (Melissa Martin's Mimosa, EMR data pull 10/28/2023)
 
 ### Github repo:
-[https://github.com/ballere/msanxiety/](https://github.com/ballere/msanxiety/scripts)
+[https://github.com/ballere/msanxiety/](https://github.com/ballere/msanxiety/tree/main/scripts)
 
 ### Website
 TBD, update below
@@ -121,7 +121,7 @@ We first constructed our sample from n=890 individuals who were diagnosed with m
 
 The following code takes the n=890 sample, and goes through a variety of exclusions to get the final n. Specifically, after excluding xxx participants with poor image, xxx participants were eligible for anxiety classification.  Participants with MS were identified from the electronic medical record and stratified into three age- and sex-matched groups: 1) MS without anxiety (MS+noA); 2) MS with mild anxiety (MS+mildA), 3) MS with severe anxiety (MS+severeA). MS+noA included persons who had no psychiatric diagnosis, took no psychiatric medications, and were asymptomatic on PHQ 2/9 (n = 99, age (SD) = 49.4 (11.7), % female = 75). MS+mildA included persons with either a diagnosis of an anxiety disorder (F40*) or a prescription for an anti-anxiety medication (n = 249, age (SD) = 47.1 (11.1), % female = 82). MS+severeA included persons who had both an anxiety disorder and were taking an anti-anxiety medication (n = 23, age (SD) = 47.1 (12.4), % female = 78).
 
-[clean_dac_pull_icd10_codes_and_make_clean_df.R](https://github.com/ballere/msanxiety/scripts/clean_dac_pull_icd10_codes_and_make_clean_df.R)
+[clean_dac_pull_icd10_codes_and_make_clean_df.R](https://github.com/ballere/msanxiety/tree/main/scripts/clean_dac_pull_icd10_codes_and_make_clean_df.R)
 
 ### Automated white matter lesion segmentation
 
@@ -215,7 +215,7 @@ A gam with main effect of anxiety dose (dose = 0 (MS+nA), 1 (MS+mildA), or 2 (MS
 
 This script is run locally, on R. It does all second level/group data analysis. 
 
-[ACNP2024_MSAnxiety.Rmd](https://github.com/ballere/msanxiety/scripts/ACNP2024_MSAnxiety.Rmd)
+[ACNP2024_MSAnxiety.Rmd](https://github.com/ballere/msanxiety/tree/main/scripts/ACNP2024_MSAnxiety.Rmd)
 
 
 
