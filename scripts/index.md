@@ -182,6 +182,12 @@ This specifically makes the fascicle injury ratio measure, calculated by taking 
 
 [roi_ratio_regressions.R](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/roi_ratio_regressions.R)
 
+### Final group level analysis
+
+This script is run locally, on R. It does all second level/group data analysis. Main steps summarized below.
+
+[ACNP2024_MSAnxiety.Rmd](https://github.com/ballere/msanxiety/tree/main/scripts/ACNP2024_MSAnxiety.Rmd)
+
 #### Disease burden summary measures
   Having computed disease measures at the individual fascicle, I wanted to look specifically at mean disease burden in uncinate fasiculus, given previous literature suggesting that the uncinate is the main white matter fiber connecting mPFC and amygdala, core brain areas associated with anxiety disorders. 
     
@@ -206,11 +212,7 @@ gam(mean_UF_vol ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = F), data=
   
   gam(mean_UF_vol ~ depDiagnosis + osex + s(PAT_AGE_AT_EXAM, k=4, fx=F), data = df_dep)
 
-### Final group level analysis
 
-This script is run locally, on R. It does all second level/group data analysis. 
-
-[ACNP2024_MSAnxiety.Rmd](https://github.com/ballere/msanxiety/tree/main/scripts/ACNP2024_MSAnxiety.Rmd)
 
 
 
