@@ -113,7 +113,7 @@ HCP template:
 <br>
 
 ### * Functions for project *
-[ms_functions.R](https://github.com/ballere/msanxiety/scripts/ms_functions.R)
+[ms_functions.R](https://github.com/ballere/msanxiety/tree/main/scripts/ms_functions.R)
 
 ### Sample Construction
 
