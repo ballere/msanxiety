@@ -189,28 +189,28 @@ This script is run locally, on R. It does all second level/group data analysis. 
 [ACNP2024_MSAnxiety.Rmd](https://github.com/ballere/msanxiety/tree/main/scripts/ACNP2024_MSAnxiety.Rmd)
 
 #### Disease burden summary measures
-     Having computed disease measures at the individual fascicle, I wanted to look specifically at mean disease burden in uncinate fasiculus, given previous literature suggesting that the uncinate is the main white matter fiber connecting mPFC and amygdala, core brain areas associated with anxiety disorders. 
+Having computed disease measures at the individual fascicle, I wanted to look specifically at mean disease burden in uncinate fasiculus, given previous literature suggesting that the uncinate is the main white matter fiber connecting mPFC and amygdala, core brain areas associated with anxiety disorders. 
     
 #### Main effect of Diagnosis
 
 A gam with mean_UF_vol as dependent variable, modeling main effect of anxiety diagnosis (MS+noA vs MS+severeA), with sex and spline of age as covariates.
      
-     *gam(mean_UF_vol ~ Diagnosis + osex+s(PAT_AGE_AT_EXAM, k = 4, fx = F), data = uncinate_by_dx_df)*
+     gam(mean_UF_vol ~ Diagnosis + osex+s(PAT_AGE_AT_EXAM, k = 4, fx = F), data = uncinate_by_dx_df)
 
 #### Parametric effect of anxiety "dose"
 
 A gam with mean_UF_vol as dependent variable, modeling main effect of anxiety dose (dose = 0 (MS+nA), 1 (MS+mildA), or 2 (MS+severeA)), with sex and spline of age as covariates.
      
-     *gam(mean_UF_vol ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = F), data=df_demo_and_fascicles_no_unclass_anxiety_dose)*
+     gam(mean_UF_vol ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = F), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
 
 #### Sensitivity analyses
 As a comparison, I also looked specifically at fornix, which is another subcortical fiber primarily involved in cognition/memory (N.S.) 
 
-     *gam(mean_fornix_volume ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)*
+     gam(mean_fornix_volume ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
 
 To test whether this was specific to anxiety diagnosis, I also evaluated mean uncinate volume in patients with MS+Depression (199) or MS+noDep (99) in this cohort (N.S.) 
      
-     *gam(mean_UF_vol ~ depDiagnosis + osex + s(PAT_AGE_AT_EXAM, k=4, fx=F), data = df_dep)*
+     gam(mean_UF_vol ~ depDiagnosis + osex + s(PAT_AGE_AT_EXAM, k=4, fx=F), data = df_dep)
 
 
 
