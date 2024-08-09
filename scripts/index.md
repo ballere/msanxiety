@@ -60,10 +60,16 @@ MS Proviers (local computer)
      
 Medication information: 
 
-     [ms_medications_brand_and_generic](https://github.com/ballere/msanxiety/tree/main/medication_data/ms_medications_brand_and_generic.csv)
-     [birth_control_est_prog_doses](https://github.com/ballere/msanxiety/tree/main/medication_data/BCP_est_and_prog_levels_and_doses_all_brands.csv)
-     [ms_medications_brand_and_generic](https://github.com/ballere/msanxiety/tree/main/medication_data/ms_medications_brand_and_generic.csv) [nami_psych_meds(https://github.com/ballere/msanxiety/tree/main/medication_data/nami_psych_meds_antidepressants_plus_gabapentin_and_amitriptyline_benzos_beta_blockers.csv)
-     [antianxiety_medications](https://github.com/ballere/msanxiety/tree/main/medication_data/antianxiety_medications.csv)
+
+[ms_medications_brand_and_generic](https://github.com/ballere/msanxiety/tree/main/medication_data/ms_medications_brand_and_generic.csv)
+     
+[birth_control_est_prog_doses](https://github.com/ballere/msanxiety/tree/main/medication_data/BCP_est_and_prog_levels_and_doses_all_brands.csv)
+     
+[ms_medications_brand_and_generic](https://github.com/ballere/msanxiety/tree/main/medication_data/ms_medications_brand_and_generic.csv) 
+
+[nami_psych_meds](https://github.com/ballere/msanxiety/tree/main/medication_data/nami_psych_meds_antidepressants_plus_gabapentin_and_amitriptyline_benzos_beta_blockers.csv)
+
+[antianxiety_medications](https://github.com/ballere/msanxiety/tree/main/medication_data/antianxiety_medications.csv)
 
 ICD Codes:
 
