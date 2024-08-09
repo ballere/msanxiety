@@ -152,7 +152,8 @@ For more details, please see [https://pennlinc.github.io/msdepression/](https://
 
 This script is run locally, on R. It does all second level/group data analysis. Main steps summarized below.
 
-[ACNP2024_MSAnxiety.Rmd](https://github.com/ballere/msanxiety/tree/main/scripts/ACNP2024_MSAnxiety.Rmd)
+[MSAnxiety_manuscript_audrey_replication.Rmd](https://github.com/ballere/msanxiety/tree/main/scripts/MSAnxiety_manuscript_audrey_replication.Rmd)
+
 
 #### Disease burden summary measures
 I wanted to look specifically at mean disease burden in uncinate fasiculus, given previous literature suggesting that the uncinate is the main white matter bundle connecting mPFC and amygdala, core brain areas associated with anxiety disorders. 
