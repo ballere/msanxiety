@@ -89,7 +89,7 @@ Groups:
  - More detailed streamline filtering
  - Depression group uncinate burden
  - Fornix diagnosis and dose; depression group 
-
+ - Corr mean_UF with social problems?
 
 ```{r read_in_df}
 homedir <- "/Users/eballer/BBL/msanxiety/"
@@ -258,6 +258,101 @@ names(df_fascicles_volumes) <- fascicle_names_w_vol_suffix
 df_demo_and_fascicles <- cbind(df_everything_else, df_fascicles_prop, df_fascicles_volumes)
 ```
 
+## Add PROMIS
+```{r promis_data_handling}
+##########################################################
+#            Read in PROMIS Data              #
+##########################################################
+promis_data <- readRDS(paste0(homedir, "/data/dac/promis_data_20220824_fixed_physical_health_cleaned_n1813_unique_indiv_n532_2015-2022.rds"))
+promis_score_names <- names(promis_data[7:16]) 
+
+df_people_with_promis_data <- df_demo_and_fascicles %>%
+  filter(EMPI %in% promis_data$EMPI) #n=129
+
+unique_empis_in_promis_group <- unique(df_people_with_promis_data$EMPI) #n=129
+
+#go through each person w/promis data and append the columns to their row that reflects the closest collected PROMIS
+
+#function, take an empi and date, returns the row of data w/promis scores
+get_closest_promis_to_ms_exam_date <- function(subj_empi, subj_exam_date) {
+  df_closest_promis <- promis_data %>%
+    filter(EMPI == subj_empi) %>%
+    mutate(distance_from_scan = abs(RECORDED_TIME-subj_exam_date)) %>%
+    filter(abs(RECORDED_TIME-subj_exam_date)==min(abs(RECORDED_TIME-subj_exam_date))) %>%
+    slice(1)
+  return(df_closest_promis)
+}
+
+#make dataframe to store promis info
+promis_info_closest_proximity <- data.frame(matrix(NA, nrow=dim(df_people_with_promis_data)[1], ncol=(dim(promis_data)[2] + 1)))
+names(promis_info_closest_proximity) <- c(names(promis_data), "distance_from_scan")
+
+for (line in 1:dim(df_people_with_promis_data)[1]) {
+  #pull out subject empi and exam date
+  subj_empi <- df_people_with_promis_data$EMPI[line]
+  subj_exam_date <- df_people_with_promis_data$BEGIN_EXAM_DTTM[line]
+  
+  #returns whole line, promis scores, id, empi, everything
+  closest_promis_data <- get_closest_promis_to_ms_exam_date(subj_empi = subj_empi, subj_exam_date = subj_exam_date) 
+
+  #store as new line
+  promis_info_closest_proximity[line,] = closest_promis_data
+}
+
+#drop unnecessary columns c("DE_PAT_ID", "EMPI", "HUP_MRN", "SEX", "RACE")
+promis_info_closest_proximity_just_scores <- promis_info_closest_proximity[,6:dim(promis_info_closest_proximity)[2]]
+
+#combine with df_people_with_promis_data
+df_people_with_promis_data_scores_added = cbind(df_people_with_promis_data, promis_info_closest_proximity_just_scores)
+
+#summarize the distance from scans
+summary(df_people_with_promis_data_scores_added$distance_from_scan/364) #mean 3.1 ys, median 2.8 years, range 0.39 y to 7.16
+
+hist(df_people_with_promis_data_scores_added$distance_from_scan/364, 
+     main = "Hisogram of years between Promis and Scan",
+     xlab = "Years from Scan") #convert to years
+
+
+
+```
+
+### Demographics
+```{r demographics}
+
+#this will display a demographics table comparing age, race, sex between healthy and depressed groups, using the first presentation to treatment
+#demo
+make_demographics_table_ms_anxiety_simple(data_frame = df_demo_and_fascicles[df_demo_and_fascicles$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified",])
+
+make_demographics_table_ms_anxiety_simple(data_frame = df_demo_and_fascicles[((df_demo_and_fascicles$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") & (df_demo_and_fascicles$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds")),])
+
+#just good mimosa w/promis
+df_people_with_promis_data_scores_added_unique <- df_people_with_promis_data_scores_added %>%
+  filter(anxiety_dose != -1)  %>%
+  group_by(EMPI) %>% 
+  arrange(EXAM_DATE) %>% 
+  slice(1) %>% 
+  ungroup() 
+make_demographics_table_ms_w_promis_anxiety(data_frame = df_people_with_promis_data_scores_added_unique)
+make_demographics_table_ms_w_promis_anxiety(data_frame = df_people_with_promis_data_scores_added_unique[df_people_with_promis_data_scores_added_unique$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified",])
+
+make_demographics_table_ms_w_promis_anxiety(data_frame = df_people_with_promis_data_scores_added_unique[((df_people_with_promis_data_scores_added_unique$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") & (df_people_with_promis_data_scores_added_unique$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds")),])
+
+
+#testing whether PROMIS sub sample is equally representative with respect to prevalence of depression/non-depression. I.e. do more people with depression get PROMIS scores? or are we equally drawing from both groups?
+
+#first number is # with depression, second is number without depression
+num_w_promis <- c(sum(df_people_with_promis_data_scores_added_unique$depGroupVar == 2), sum(df_people_with_promis_data_scores_added_unique$depGroupVar == 1)) 
+
+#first number is # with depression, second is number without depression
+num_total <- c(sum(df_people_with_promis_data_scores_added_unique$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep"), sum(df_people_with_promis_data_scores_added_unique$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "true_healthy")) 
+
+df_2x2_promis_score_by_total_people_per_diagnosis <- data.frame(cbind(num_w_promis, num_total), row.names = c("MS+NoA", "MS+severeA"))
+
+#X-squared = 0.21, p = 0.65, not significant)
+chisq <- chisq.test(df_2x2_promis_score_by_total_people_per_diagnosis)
+print(chisq)
+```
+
 ##Anxiety Network from neurosynth (association, not uniformity)
 ###read in file with fasciclexanxiety overlap, and define anxiety network
 ```{r read_in_neurosynth_anxiety_network}
@@ -311,7 +406,7 @@ df_demo_and_fascicles <- df_demo_and_fascicles %>%
 #make data frame
 df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
    filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
-   filter (anxiety_dose != 3) 
+   filter(anxiety_dose != 3) 
 
 ###true healthy
 num_people_in_healthy_with_0_for_Has.Anxiety_and_On.Anxiolytics <- length(which(df_demo_and_fascicles_no_unclass_anxiety_dose$On.Anxiolytics ==0 & df_demo_and_fascicles_no_unclass_anxiety_dose$Has.anxietydx ==0))
@@ -362,12 +457,6 @@ print(paste0("Percent overlap with depression group -> ", round(sum(tibble_overa
 ### Overall Disease by Anxiety Dose *acnp
 ```{r group_anxietydx_meds_and_dep_comorbidity}
 #this collapses anxiety group + meds with those with anxiety group + meds + with/without depression
-
-#demo
-make_demographics_table_ms_anxiety_simple(data_frame = df_demo_and_fascicles[df_demo_and_fascicles$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified",])
-
-make_demographics_table_ms_anxiety_simple(data_frame = df_demo_and_fascicles[((df_demo_and_fascicles$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") & (df_demo_and_fascicles$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds")),])
-
 
 df_disease_burden_unc_and_anx_net_collapsed_variables <- df_demo_and_fascicles %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>% 
@@ -1118,4 +1207,49 @@ prop_injured_C_FP_R_prop_by_anxiety_burden_collapsed_vars_plot_bar
 
 
 ```
+
+###Promis data in UF - groups too small
+#### Uncinate by anxiety diagnosis (N.S) 
+```{r uncinate_by_dx}
+
+
+
+### Results:  
+#define group
+  uncinate_by_dx_df <- df_people_with_promis_data_scores_added_unique %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds") %>%
+  mutate(subject = as.factor(EMPI)) %>%
+  mutate(Diagnosis = oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed) %>%
+  mutate(Diagnosis = ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="true_healthy", "MS-Anxiety", "MS+Anxiety")) %>%
+  mutate(Diagnosis = as.factor(Diagnosis)) %>%
+  ungroup() #n=22
+ 
+
+
+#bilateral UF ~ Diagnosis: N.S.
+disease_mean_UF_vol_gam <- gam(mean_UF_vol ~ Diagnosis + osex+s(PAT_AGE_AT_EXAM, k = 4, fx = F), data = uncinate_by_dx_df)
+summary(disease_mean_UF_vol_gam)
+
+
+
+```
+
+#### Uncinate by Anxiety Dose (N.S.)
+```{r uncinateByAnxietyDose}
+
+
+
+
+#define group
+df_demo_and_fascicles_no_unclass_anxiety_dose <- df_people_with_promis_data_scores_added_unique %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
+  filter(anxiety_dose != -1) #n=79
+
+
+  #bilat anxiety dose - NS
+  anxietyGrouping_mean_UF_by_sex_gam <- gam(mean_UF_vol ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = F), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
+  summary(anxietyGrouping_mean_UF_by_sex_gam)
+ 
+```  
 
