@@ -47,8 +47,8 @@ output_file <- paste0(homedir, "/data/data_2023_pull_with_curated_icd10_codes.rd
 data_pt1 <- read.csv(paste0(homedir, "/data/dac/investigatingpatientsms2010to2023_full_psych_codes_pt1.csv"), sep = ",", header = TRUE) 
 data_pt2 <- read.csv(paste0(homedir, "/data/dac/investigatingpatientsms2010to2023_full_psych_codes_pt2.csv"), sep = ",", header = TRUE) 
 
-#dac pull with ms providers, will need to have victoria update this.
-dac_pull_2021_with_ms_providers <- read.csv("/Users/eballer/BBL/msdepression/data/dac/investigatingdepressioninmspatients_dates_right_format.csv", sep = ",", header = TRUE)
+#dac pull with ms providers
+dac_pull_2021_with_ms_providers <- read.csv(paste0(homedir, "/data/dac/investigatingdepressioninmspatients_dates_right_format.csv"), sep = ",", header = TRUE)
 empi_and_provider <- dac_pull_2021_with_ms_providers %>% dplyr::select(EMPI, Provider) %>% mutate(EMPI = as.character(EMPI))
 
 #msproviders
