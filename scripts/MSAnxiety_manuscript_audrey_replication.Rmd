@@ -360,6 +360,88 @@ df_2x2_promis_score_by_total_people_per_diagnosis <- data.frame(cbind(num_w_prom
 chisq <- chisq.test(df_2x2_promis_score_by_total_people_per_diagnosis)
 print(chisq)
 ```
+#### Plot promis x anxiety dose
+```{r plot_Promis_x_anxiety}
+
+# Reshape the data from wide to long format
+df_for_promis_plot <- df_people_with_promis_data_scores_added_unique %>%
+  dplyr::select(EMPI,
+                anxiety_dose, 
+                Quality_of_Life, 
+                Physical_Health, 
+                Mental_Health_and_Mood,
+                Social_Activities_Satisfaction,
+                Carrying_Out_Social_Activities,
+                Carrying_Out_Physical_Activities,
+                Emotional_Problems, 
+                Fatique_Average,
+                PostOp.PROMIS.Physical.Score,
+                PostOp.PROMIS.Mental.Score) %>%
+  group_by(anxiety_dose) %>%
+  
+  # summarize by score
+  summarise(across(c(Quality_of_Life, 
+                     Physical_Health, 
+                     Mental_Health_and_Mood,
+                     Social_Activities_Satisfaction,
+                     Carrying_Out_Social_Activities,
+                     Carrying_Out_Physical_Activities,
+                     Emotional_Problems, 
+                     Fatique_Average,
+                     PostOp.PROMIS.Physical.Score, #this has a much bigger range
+                     PostOp.PROMIS.Mental.Score), #bigger range
+                   list(mean = ~mean(. , na.rm = TRUE)))) %>% #                   ,     sd = ~sd(. , na.rm = TRUE)))) 
+
+  
+  # Reshape to long format for plotting
+    pivot_longer(cols = -anxiety_dose, 
+               names_to = "PROMIS_Score", 
+               values_to = "Score")
+
+custom_colors <- c(
+  "Quality_of_Life" = "#66c2a5",  # Green
+  "Physical_Health" = "#8da0cb",  # Purple
+  "Mental_Health_and_Mood" = "#99d8c9",  # Green
+  "Social_Activities_Satisfaction" = "#238b45",  # Green
+  "Carrying_Out_Social_Activities" = "#41ae76",  # Green
+  "Carrying_Out_Physical_Activities" = "#8856a7",  # Purple
+  "Emotional_Problems" = "#006d2c",  # Dark Green
+  "Fatique_Average" = "#4B0082",  # Light Purple
+  "PostOp.PROMIS.Mental.Score" = "#9ACD32",  # Green
+  "PostOp.PROMIS.Physical.Score" = "#810f7c"  # Dark Purple
+)
+
+custom_colors_simple <- c("#8856a7","#41ae76", "#006d2c", "#4B0082", "#99d8c9", "#8da0cb",  "#9ACD32", "#810f7c", "#66c2a5", "#238b45") #done in alphabetical order. 
+
+
+ 
+# Create the ggplot
+promis_with_post_op <- ggplot(df_for_promis_plot, aes(x = anxiety_dose, y = Score, color = PROMIS_Score)) +
+  geom_line(size = 1.2) +
+  scale_x_continuous(breaks = c(0, 1, 2)) +
+  scale_y_continuous(limits = c(0, 20)) +
+  theme_minimal() +
+  labs(x = "Anxiety Dose", y = "Mean PROMIS Score", 
+       title = "PROMIS Scores by Anxiety Dose") +
+#  scale_color_brewer(palette = "Set3") 
+  scale_color_manual(values = custom_colors_simple)
+promis_with_post_op
+
+#remove postop scores
+
+promis_without_postop<- ggplot(df_for_promis_plot, aes(x = anxiety_dose, y = Score, color = PROMIS_Score)) +
+  geom_line(size = 1.2) +
+  scale_x_continuous(breaks = c(0, 1, 2)) +
+  scale_y_continuous(limits = c(0, 5)) +
+  theme_minimal() +
+  labs(x = "Anxiety Dose", y = "Mean PROMIS Score", 
+       title = "PROMIS Scores by Anxiety Dose") +
+  #scale_color_brewer(palette = "Set3") 
+  scale_color_manual(values = custom_colors_simple)
+
+promis_without_postop
+
+```
 
 ##Anxiety Network from neurosynth (association, not uniformity)
 ###read in file with fasciclexanxiety overlap, and define anxiety network
