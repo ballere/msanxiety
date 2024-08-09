@@ -49,69 +49,64 @@ ACNP 2024 post abstract - "Anxiety as a disease of white matter disruption: asso
 *** will need to update!
 All clinical data was drawn from the electronic medical record via the Data Acquisition Center (DAC). All images were obtained from the PACS system from the Department of Radiology.
 
-DAC Pulls: 
+DAC Pulls (local computer): 
 
      /Users/eballer/BBL/msanxiety/data/dac/investigatingpatientsms2010to2023_full_psych_codes_pt1.csv
      /Users/eballer/BBL/msanxiety/data/dac/investigatingpatientsms2010to2023_full_psych_codes_pt2.csv
      /Users/eballer/BBL/msanxiety/data/dac/investigatingdepressioninmspatients_dates_right_format.csv
  
-MS Proviers
+MS Proviers (local computer)
      /Users/eballer/BBL/general_emr_relevant_spreadsheets//msproviders.csv
      
 Medication information: 
 
-     /Users/eballer/BBL/medication_data/ms_medications_brand_and_generic.csv
-     /Users/eballer/BBL/medication_data/BCP_est_and_prog_levels_and_doses_all_brands.csv
-     /Users/eballer/BBL/medication_data/ms_medications_brand_and_generic.csv
-     /Users/eballer/BBL/medication_data/nami_psych_meds_antidepressants_plus_gabapentin_and_amitriptyline_benzos_beta_blockers.csv
-     /Users/eballer/BBL/medication_data/antianxiety_medications.csv
+     [ms_medications_brand_and_generic](https://github.com/ballere/msanxiety/tree/main/medication_data/ms_medications_brand_and_generic.csv)
+     [birth_control_est_prog_doses](https://github.com/ballere/msanxiety/tree/main/medication_data/BCP_est_and_prog_levels_and_doses_all_brands.csv)
+     [ms_medications_brand_and_generic](https://github.com/ballere/msanxiety/tree/main/medication_data/ms_medications_brand_and_generic.csv) [nami_psych_meds(https://github.com/ballere/msanxiety/tree/main/medication_data/nami_psych_meds_antidepressants_plus_gabapentin_and_amitriptyline_benzos_beta_blockers.csv)
+     [antianxiety_medications](https://github.com/ballere/msanxiety/tree/main/medication_data/antianxiety_medications.csv)
 
 ICD Codes:
 
-/Users/eballer/BBL/icd10_data/F-codes_01-99.csv
+[icd10_data](https://github.com/ballere/msanxiety/tree/main/icd10_data/F-codes_01-99.csv)
 
-Subject imaging data: 
+Subject imaging data (cluster): 
 
-     /project/msdepression/data/subj_directories
+     /project/msanxiety/data/subj_directories
 
-Cubids : 
+Cubids (cluster): 
 
-     /project/msdepression/cubids/v1_validation.csv
-     /project/msdepression/CuBIDS_outputs/*
+     /project/msanxiety/cubids/v1_validation.csv
+     /project/msanxiety/CuBIDS_outputs/*
      
-MIMoSA QA info:
+MIMoSA QA info (cluster):
 
-     /project/msdepression/data/melissa_martin_files/csv/mimosa_dataframe
+     /project/msanxiety/data/melissa_martin_files/csv/mimosa_dataframe
 
 
-Fascicle proportions (for each subject (one row), % of injured fascicle (each column is a fascicle)): 
+Fascicle proportions (for each subject (one row), % of injured fascicle (each column is a fascicle); cluster): 
 
-     /project/msdepression/results/fascicle_volumes_all_subjects_roi_n2336.csv
+     /project/msanxiety/results/fascicle_volumes_all_subjects_roi_n2336.csv
 
-Overlap of each fascicle (volume and proportion) with depression network: 
+Volume of all lesions (NOT fascicles) for each subject (cluster): 
 
-     /project/msdepression/results/streamline_volume_within_dep_network_3_09.csv
-
-Volume of all lesions (NOT fascicles) for each subject: 
-
-     /project/msdepression/results/mimosa_binary_masks_hcp_space_20211026_n2336_volumes.csv
+     /project/msanxiety/results/mimosa_binary_masks_hcp_space_20211026_n2336_volumes.csv
 
 Volume of each healthy (full volume) fascicle: 
 
-     /project/msdepression/templates/dti/HCP_YA1065_tractography/fiber_volume_values.csv
+     /project/msanxiety/templates/dti/HCP_YA1065_tractography/fiber_volume_values.csv
      
 Individual Healthy Fascicle Maps (.nii)
 
-     /project/msdepression/templates/dti/HCP_YA1065_tractography<association,cerebellum,commissural,projection>
+     /project/msanxiety/templates/dti/HCP_YA1065_tractography<association,cerebellum,commissural,projection>
 
 Harvard Depression Mask (thresholded 3.09, binarized)
 
-     /project/msdepression/templates/harvard_depression/Dep_clust_T_3_09_binarized.nii
+     /project/msanxiety/templates/harvard_depression/Dep_clust_T_3_09_binarized.nii
 
 HCP template:
 
-    /project/msdepression/templates/mni_icbm152_t1_tal_nlin_asym_09a.nii 
-    /project/msdepression/templates/mni_icbm152_t1_tal_nlin_asym_09axbrainmask.nii
+    /project/msanxiety/templates/mni_icbm152_t1_tal_nlin_asym_09a.nii 
+    /project/msanxiety/templates/mni_icbm152_t1_tal_nlin_asym_09axbrainmask.nii
 
 <br>
 <br>
