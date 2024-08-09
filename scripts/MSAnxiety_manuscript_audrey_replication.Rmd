@@ -74,7 +74,21 @@ Groups:
   disease_mean_UF_vol_lm <- lm(mean_UF_vol ~ depGroupVar + osex+PAT_AGE_AT_EXAM, data = dep_and_healthy_groups_for_ICD_analysis)
   summary(disease_mean_UF_vol_lm)
 
-
+#figure brainstorming
+1. Flowchart of inclusion/exclusion
+2. Demographics (age, sex, race, +/- PHQ2, PHQ9, has anxiety dx, on anxiety meds, both, on dmt) 
+3. Some sort of schematic of pipeline - 
+  a. amygdala - mpfc blobs
+  b. uncinate connecting the two
+  c. white matter lesion dropped in uncinates
+  d. streamline filtering
+  e. mean of both side
+4. Mean UF Anxiety diagnosis either violin or bar
+5. Mean Anxiety dose either violin or bar
+6. Supplement: 
+ - More detailed streamline filtering
+ - Depression group uncinate burden
+ - Fornix diagnosis and dose; depression group 
 
 
 ```{r read_in_df}
