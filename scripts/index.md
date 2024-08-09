@@ -59,9 +59,6 @@ MS Proviers (local computer)
      /Users/eballer/BBL/general_emr_relevant_spreadsheets//msproviders.csv
      
 Medication information: 
-
-
-[ms_medications_brand_and_generic](https://github.com/ballere/msanxiety/tree/main/medication_data/ms_medications_brand_and_generic.csv)
      
 [birth_control_est_prog_doses](https://github.com/ballere/msanxiety/tree/main/medication_data/BCP_est_and_prog_levels_and_doses_all_brands.csv)
      
