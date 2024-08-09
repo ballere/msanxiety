@@ -85,12 +85,15 @@ Groups:
   e. mean of both side
 4. Mean UF Anxiety diagnosis either violin or bar
 5. Mean Anxiety dose either violin or bar
-6. Supplement: 
+6. PROMIS scores (each type of measure is a line, y axis is score, x axis is anxiety dose)
+7. Supplement: 
  - More detailed streamline filtering
  - Depression group uncinate burden
  - Fornix diagnosis and dose; depression group 
  - Corr mean_UF with social problems?
 
+## Make final data frame for analysis
+### read in emr data
 ```{r read_in_df}
 homedir <- "/Users/eballer/BBL/msanxiety/"
 
@@ -98,6 +101,7 @@ homedir <- "/Users/eballer/BBL/msanxiety/"
 data_2023_pull <- readRDS(paste0(homedir, "/data/data_2023_pull_with_curated_icd10_codes.rds"))
 ```
 
+### read in Mimosa data
 ```{r read_in_mimosa_qc}
 #This section checks how many unique individuals had QA data, and then how many met MIMoSA QC. Some additional people lost at registration. 
 
@@ -132,6 +136,7 @@ mimosa_unique_score_gre_75 <- mimosa_qc_unique %>%
   ungroup 
 ```
 
+### merge with Mimosa data
 ```{r merge_df_with_mimosa}
 
 #n=867, individual scans
@@ -144,7 +149,7 @@ df_people_with_good_mimosa <- data_2023_pull %>%
 
 
 
-### Read in fascicle info, use this to determine proportion and volume of injury within each fascicle, and save it in the df_demo_and_fascicles_df
+### read in fascicle info, use this to determine proportion and volume of injury within each fascicle, and save it in the df_demo_and_fascicles_df
 ```{r read_in_fascicle_info}
 
 ### by the end of this chunk, the df should include 77 columns each for proportion of injury and volume of injury in each fascicle
@@ -160,7 +165,7 @@ fascicle_proportions <- fascicle_proportions %>%
 
 ```
 
-## Merge data with good mimosa
+### merge data with good mimosa
 ```{r merge_with_good_mimosa}
 ##########################################################
 #             Merge with data_empi              #
@@ -176,7 +181,7 @@ df_demo_and_fascicles <- df_people_with_good_mimosa %>%
 
 ```
 
-## Read in lesion volume size
+### read in lesion volume size
 ```{r read_in_lesion_volumes}
 ##########################################################
 #             Read in Lesion Volumes                     #
@@ -191,7 +196,7 @@ lesion_volumes <- lesion_volumes %>%
 
 ```
 
-## Merge with data frame with good mimosas
+### merge with data frame with good mimosas
 ```{r merge_lesion_volume_w_mimosa_df}
 ##########################################################
 #             Merge lesion volumes with mimosa df        #
@@ -203,7 +208,7 @@ df_demo_and_fascicles <- df_demo_and_fascicles %>%
 
 ```
 
-## Make separate columns for proportional injury (prop), total volume injury (vol)
+### make separate columns for proportional injury (prop), total volume injury (vol)
 ```{r add_suffix_to_each_measure}
 
 ########################################
@@ -258,7 +263,7 @@ names(df_fascicles_volumes) <- fascicle_names_w_vol_suffix
 df_demo_and_fascicles <- cbind(df_everything_else, df_fascicles_prop, df_fascicles_volumes)
 ```
 
-## Add PROMIS
+### add PROMIS
 ```{r promis_data_handling}
 ##########################################################
 #            Read in PROMIS Data              #
@@ -316,7 +321,8 @@ hist(df_people_with_promis_data_scores_added$distance_from_scan/364,
 
 ```
 
-### Demographics
+## Demographics
+### simple demographics
 ```{r demographics}
 
 #this will display a demographics table comparing age, race, sex between healthy and depressed groups, using the first presentation to treatment
@@ -324,7 +330,10 @@ hist(df_people_with_promis_data_scores_added$distance_from_scan/364,
 make_demographics_table_ms_anxiety_simple(data_frame = df_demo_and_fascicles[df_demo_and_fascicles$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified",])
 
 make_demographics_table_ms_anxiety_simple(data_frame = df_demo_and_fascicles[((df_demo_and_fascicles$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") & (df_demo_and_fascicles$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds")),])
+```
 
+### demographics with PROMIS
+```{r demo_with_promis}
 #just good mimosa w/promis
 df_people_with_promis_data_scores_added_unique <- df_people_with_promis_data_scores_added %>%
   filter(anxiety_dose != -1)  %>%
@@ -333,9 +342,8 @@ df_people_with_promis_data_scores_added_unique <- df_people_with_promis_data_sco
   slice(1) %>% 
   ungroup() 
 make_demographics_table_ms_w_promis_anxiety(data_frame = df_people_with_promis_data_scores_added_unique)
-make_demographics_table_ms_w_promis_anxiety(data_frame = df_people_with_promis_data_scores_added_unique[df_people_with_promis_data_scores_added_unique$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified",])
 
-make_demographics_table_ms_w_promis_anxiety(data_frame = df_people_with_promis_data_scores_added_unique[((df_people_with_promis_data_scores_added_unique$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") & (df_people_with_promis_data_scores_added_unique$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds")),])
+make_demographics_table_ms_w_promis_anxiety(data_frame = df_people_with_promis_data_scores_added_unique[(df_people_with_promis_data_scores_added_unique$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds"),])
 
 
 #testing whether PROMIS sub sample is equally representative with respect to prevalence of depression/non-depression. I.e. do more people with depression get PROMIS scores? or are we equally drawing from both groups?
@@ -545,18 +553,6 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
 
 ### Uncinate **ACNP**
 
-#### Demographics
-```{r demo_uncinate}
-
-
-###### all groups, no unclassified
-make_demographics_table_ms_anxiety_simple(df_demo_and_fascicles %>% filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified"))
-
-###### just healthy and sick
-make_demographics_table_ms_anxiety_simple(df_demo_and_fascicles %>% filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
-  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds"))
-
-```
 
 #### Uncinate by anxiety diagnosis 
 ```{r uncinate_by_dx}
