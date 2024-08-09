@@ -49,17 +49,26 @@ ACNP 2024 post abstract - "Anxiety as a disease of white matter disruption: asso
 *** will need to update!
 All clinical data was drawn from the electronic medical record via the Data Acquisition Center (DAC). All images were obtained from the PACS system from the Department of Radiology.
 
-DAC Pull: 
+DAC Pulls: 
 
-     /project/msdepression/data/erica_dac_pull/investigatingdepressioninmspatients_dates_right_format.csv
+     /Users/eballer/BBL/msanxiety/data/dac/investigatingpatientsms2010to2023_full_psych_codes_pt1.csv
+     /Users/eballer/BBL/msanxiety/data/dac/investigatingpatientsms2010to2023_full_psych_codes_pt2.csv
+     /Users/eballer/BBL/msanxiety/data/dac/investigatingdepressioninmspatients_dates_right_format.csv
  
-Psychiatry medication information: 
+MS Proviers
+     /Users/eballer/BBL/general_emr_relevant_spreadsheets//msproviders.csv
+     
+Medication information: 
 
-     /project/msdepression/drugs_data/nami_psych_meds_antidepressants.csv
+     /Users/eballer/BBL/medication_data/ms_medications_brand_and_generic.csv
+     /Users/eballer/BBL/medication_data/BCP_est_and_prog_levels_and_doses_all_brands.csv
+     /Users/eballer/BBL/medication_data/ms_medications_brand_and_generic.csv
+     /Users/eballer/BBL/medication_data/nami_psych_meds_antidepressants_plus_gabapentin_and_amitriptyline_benzos_beta_blockers.csv
+     /Users/eballer/BBL/medication_data/antianxiety_medications.csv
 
-Patients with parsable depression diagnosis (after incorporating medications):
+ICD Codes:
 
-     /project/msdepression/drugs_data/parsable_msdepression.csv *fed into R analysis*
+/Users/eballer/BBL/icd10_data/F-codes_01-99.csv
 
 Subject imaging data: 
 
