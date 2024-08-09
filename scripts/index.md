@@ -56,6 +56,7 @@ DAC Pulls (local computer):
      /Users/eballer/BBL/msanxiety/data/dac/investigatingdepressioninmspatients_dates_right_format.csv
  
 MS Proviers (local computer)
+
      /Users/eballer/BBL/general_emr_relevant_spreadsheets//msproviders.csv
      
 Medication information: 
