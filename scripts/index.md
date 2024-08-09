@@ -146,49 +146,7 @@ I was then able to calculate the "volume" of the disease in a fascicle (i.e. vol
   
 Full fascicle volumes were also calculated and saved as .niis. 
 
-#### Step 1: Registering/normalizing MIMoSA binary maps to HCP template
-
-[ants_registration_code.sh](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/ants_registration_code.sh)
-
-#### Step 2: Take a subject's MIMoSA lesions and generate the fiber tracts (individual fascicles) that run through it
-
-*Script that cycles through all subjects to do streamline filtering*
-
-[dsi_studio_bash.sh](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/dsi_studio_bash.sh)
-
-*Individual subject streamline filtering, called from dsi_studio_bash*
-
-[indiv_mimosa_lesion_dsi_studio_script.sh](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/indiv_mimosa_lesion_dsi_studio_script.sh)
-
-#### Step 3: Calculate the volume of each fascicle in a template (healthy) brain
-
-*Make the volume of each of the healthy fascicles*
-
-[make_streamline_volumes_for_template.sh](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/make_streamline_volumes_for_template.sh)
-
-*Calculate the volume within each healthy fascicle*
-
-[get_volume_of_mimosa_lesions.sh](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/get_volume_of_mimosa_lesions.sh)
-
-#### Step 4: Calculate the volume of the fiber tracts that are impaired
-
-*Make streamline volumes for all subjects*
-
-[streamline_volumes_all_subjs.sh](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/streamline_volumes_all_subjs.sh)
-
-*Make streamline volumes for a single subject, called from streamline_volumes_all_subjs.sh*
-
-[make_streamline_volumes_single_subj_pmacs.sh](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/make_streamline_volumes_single_subj_pmacs.sh)
-
-*If you want to calculate the volume of the MIMoSA lesions irrespective of the streamlines they affect*
-
-[get_volume_of_mimosa_lesions.sh](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/get_volume_of_mimosa_lesions.sh)
-
-#### Step 5: Generate summary fascicle measures
-
-This specifically makes the fascicle injury ratio measure, calculated by taking the volume of injured fascicle and dividing by the overall volume of the healthy fascicle. 
-
-[roi_ratio_regressions.R](https://github.com/PennLINC/msdepression/blob/gh-pages/scripts/roi_ratio_regressions.R)
+For more details, please see [https://pennlinc.github.io/msdepression/](https://pennlinc.github.io/msdepression/), published in Baller EB, Sweeney EM, Cieslak M, Robert-Fitzgerald T, Covitz SC, Martin ML, Schindler MK, Bar-Or A, Elahi A, Larsen BS, Manning AR, Markowitz CE, Perrone CM, Rautman V, Seitz MM, Detre JA, Fox MD, Shinohara RT, Satterthwaite TD. Mapping the Relationship of White Matter Lesions to Depression in Multiple Sclerosis. Biol Psychiatry. 2024 Jun 15;95(12):1072-1080. [doi: 10.1016/j.biopsych.2023.11.010](10.1016/j.biopsych.2023.11.010). Epub 2023 Nov 18. PMID: 37981178; PMCID: PMC11101593.
 
 ### Final group level analysis
 
