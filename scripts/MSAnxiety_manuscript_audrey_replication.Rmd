@@ -558,6 +558,11 @@ summary(anxiety_dose_x_mental_score)
 #anxiety_dose   0.3836     0.2391   1.605    0.114
 anxiety_dose_x_diff_score <- lm(phys_mental_diff_score ~ anxiety_dose, df_for_promis_plot_mental_vs_physical_healthy_test)
 summary(anxiety_dose_x_diff_score)
+
+#looking at anxiety_dose = 2 only, 0.22 -> sample size too small
+
+mental_vs_physical_health_t <- t.test(df_for_promis_plot_mental_vs_physical_healthy_test$physical_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], df_for_promis_plot_mental_vs_physical_healthy_test$mental_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], paired=F)
+mental_vs_physical_health_t
 ```
 
 ##### Physical and Mental Health x anxiety dose intx
