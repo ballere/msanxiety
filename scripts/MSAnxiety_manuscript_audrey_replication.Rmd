@@ -563,6 +563,16 @@ summary(anxiety_dose_x_diff_score)
 
 mental_vs_physical_health_t <- t.test(df_for_promis_plot_mental_vs_physical_healthy_test$physical_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], df_for_promis_plot_mental_vs_physical_healthy_test$mental_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], paired=F)
 mental_vs_physical_health_t
+
+#looking at physical health and mental health in sick vs healthy
+
+#physical health, sick vs healthy - t = 2.0048, df = 8.6555, p-value = 0.07722
+physical_health_t_sick_vs_healthy <- t.test(df_for_promis_plot_mental_vs_physical_healthy_test$physical_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==0], df_for_promis_plot_mental_vs_physical_healthy_test$physical_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], paired=F)
+physical_health_t_sick_vs_healthy
+
+#mental health, sick vs healthy - t = 3.6838, df = 8.1324, p-value = 0.006011
+mental_health_t_sick_vs_healthy <- t.test(df_for_promis_plot_mental_vs_physical_healthy_test$mental_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==0], df_for_promis_plot_mental_vs_physical_healthy_test$mental_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], paired=F)
+mental_health_t_sick_vs_healthy
 ```
 
 ##### Physical and Mental Health x anxiety dose intx
@@ -583,6 +593,25 @@ df_for_promis_plot_mental_vs_physical_healthy_no_summarize <- df_people_with_pro
 anxiety_dose_by_health_var_score <- lmer(PROMIS_Score ~anxiety_dose*health_variable + (1|EMPI), df_for_promis_plot_mental_vs_physical_healthy_no_summarize)
 summary(anxiety_dose_by_health_var_score)
 
+
+### do just with super sick and healthy
+df_for_promis_plot_mental_vs_physical_healthy_no_summarize_just_sick_and_healthy <- df_people_with_promis_data_scores_added_unique %>%
+  group_by(EMPI) %>%
+  filter(anxiety_dose != 1) %>%
+  mutate(physical_health_score = sum(across(physical_domains))/length(physical_domains)) %>%
+  mutate(mental_health_score = sum(across(mood_domains))/length(mood_domains)) %>%
+  mutate(anxiety_dose = as.numeric(anxiety_dose)) %>%
+  dplyr::select(EMPI,
+                anxiety_dose,
+                physical_health_score,
+                mental_health_score) %>%
+  gather(health_variable, PROMIS_Score, -anxiety_dose, -EMPI) 
+
+#aanxiety_dose                                       -1.0417     0.2611 24.3607  -3.989  0.00053 ***
+##health_variablephysical_health_score                0.1875     0.2731 17.0000   0.687  0.50155    
+#anxiety_dose:health_variablephysical_health_score   0.4063     0.2249 17.0000   1.806  0.08864 .  
+anxiety_dose_by_health_var_score_just_sick_and_healthy <- lmer(PROMIS_Score ~anxiety_dose*health_variable + (1|EMPI), df_for_promis_plot_mental_vs_physical_healthy_no_summarize_just_sick_and_healthy)
+summary(anxiety_dose_by_health_var_score_just_sick_and_healthy)
 ```
 
 ##Anxiety Network from neurosynth (association, not uniformity)
