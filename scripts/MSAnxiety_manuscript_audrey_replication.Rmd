@@ -338,6 +338,8 @@ make_demographics_table_ms_anxiety_simple(data_frame = df_demo_and_fascicles[((d
 df_people_with_promis_data_scores_added_unique <- df_people_with_promis_data_scores_added %>%
   filter(anxiety_dose != -1)  %>%
   group_by(EMPI) %>% 
+  mutate(num_na = sum(is.na(across(promis_score_names)))) %>%
+  filter(num_na == 0) %>%
   arrange(EXAM_DATE) %>% 
   slice(1) %>% 
   ungroup() 
@@ -362,6 +364,18 @@ print(chisq)
 ```
 #### Plot promis x anxiety dose
 ```{r plot_Promis_x_anxiety}
+#set mood versus physical domains
+mood_domains <- c("Quality_of_Life", 
+                "Mental_Health_and_Mood",
+                "Social_Activities_Satisfaction",
+                "Carrying_Out_Social_Activities",
+                "Emotional_Problems", 
+                "PostOp.PROMIS.Mental.Score")
+
+physical_domains <- c("Physical_Health", 
+                      "Carrying_Out_Physical_Activities",
+                      "Fatique_Average",
+                      "PostOp.PROMIS.Physical.Score")
 
 # Reshape the data from wide to long format
 df_for_promis_plot <- df_people_with_promis_data_scores_added_unique %>%
@@ -443,6 +457,77 @@ promis_without_postop
 
 ```
 
+#### Plot promis x anxiety dose, group by mental vs physical health
+```{r plot_Promis_x_anxiety}
+#set mood versus physical domains
+mood_domains <- c("Quality_of_Life", 
+                "Mental_Health_and_Mood",
+                "Social_Activities_Satisfaction",
+                "Carrying_Out_Social_Activities",
+                "Emotional_Problems", 
+                "PostOp.PROMIS.Mental.Score")
+
+physical_domains <- c("Physical_Health", 
+                      "Carrying_Out_Physical_Activities",
+                      "Fatique_Average",
+                      "PostOp.PROMIS.Physical.Score")
+
+# Reshape the data from wide to long format
+df_for_promis_plot_mental_vs_physical_healthy <- df_people_with_promis_data_scores_added_unique %>%
+  group_by(EMPI) %>%
+  mutate(physical_health_score = sum(across(physical_domains))/length(physical_domains)) %>%
+  mutate(mental_health_score = sum(across(mood_domains))/length(mood_domains)) %>%
+  dplyr::select(EMPI,
+                anxiety_dose,
+                physical_health_score,
+                mental_health_score) %>%
+  gather(health_variable, PROMIS_Score, -anxiety_dose, -EMPI) %>% #this is like a melt. Keeps empi and depGroupVar out of the melt
+  group_by(anxiety_dose, health_variable) %>%
+  summarise(mean_promis_score = mean(PROMIS_Score , na.rm = TRUE)) %>%
+  ungroup() 
+
+
+custom_colors <- c("physical_health_score" = "#9ACD32","mental_health_score" =  "#4B0082")
+
+custom_colors_simple <- c("#9ACD32", "#4B0082") #done in alphabetical order. 
+
+
+ 
+# Create the ggplot
+promis_with_post_op_mental_vs_physical <- ggplot(df_for_promis_plot_mental_vs_physical_healthy, aes(x = anxiety_dose, y = mean_promis_score, color = health_variable)) +
+  geom_line(size = 1.2) +
+  scale_x_continuous(breaks = c(0, 1, 2)) +
+  scale_y_continuous(limits = c(0, 7)) +
+  theme(
+       # plot.title = element_text(size=16, hjust = 0.55),
+      #  axis.text = element_text(size = 14, colour = "black"), axis.title.x = element_blank(), 
+      #  axis.title.y = element_text(size=16),
+        axis.line = element_line(size = 1.5, colour = "black", linetype=1),
+      #  legend.position = "none",
+        aspect.ratio=7/5,
+        panel.background = element_rect(colour = "white", fill = "white")) +
+  labs(x = "Anxiety Dose", y = "Mean PROMIS Score", 
+       title = "PROMIS Scores by Anxiety Dose") +
+#  scale_color_brewer(palette = "Set3") 
+  scale_color_manual(values = custom_colors_simple)
+promis_with_post_op_mental_vs_physical
+
+# Create the ggplot -> bar
+promis_with_post_op_mental_vs_physical_bar <- ggplot(df_for_promis_plot_mental_vs_physical_healthy, aes(x = anxiety_dose, y = mean_promis_score, fill = health_variable)) +
+  geom_bar(stat = "identity", position = position_dodge()) +  
+  scale_x_continuous(breaks = c(0, 1, 2)) +
+  scale_y_continuous(limits = c(0, 7)) +
+  
+  theme_minimal() +
+  labs(x = "Anxiety Dose", y = "Mean PROMIS Score", 
+       title = "PROMIS Scores by Anxiety Dose") +
+  scale_fill_manual(values = custom_colors)
+
+promis_with_post_op_mental_vs_physical_bar
+
+
+```
+
 ##Anxiety Network from neurosynth (association, not uniformity)
 ###read in file with fasciclexanxiety overlap, and define anxiety network
 ```{r read_in_neurosynth_anxiety_network}
@@ -516,6 +601,7 @@ print(paste0("num_people_in_Anxiety_AND_Anxiolytics-> ", num_people_in_Anxiety_A
 print(paste0("total n -> ",num_people_in_healthy_with_0_for_Has.Anxiety_and_On.Anxiolytics + num_people_in_Anxiety_OR_On.Anxiolytics + num_people_in_Anxiety_AND_Anxiolytics, " and row # in data frame -> ", dim(df_demo_and_fascicles_no_unclass_anxiety_dose)[1]))
 
 ```
+
 ### Overlap with depression group
 ```{r overlap_with_dep_group}
 #### 53.4% overlap total
@@ -975,7 +1061,7 @@ summary(sex_by_age)
 
 ```
 
-#### Anxiety DOSE -> NEED TO UPDATE stats in text
+#### Anxiety DOSE 
 ```{r anxietydosexage}
 
 #purpose of this analysis is to evaluate the relationship between disease (cross sectional) by diagnosis as well as by anxiety dose
