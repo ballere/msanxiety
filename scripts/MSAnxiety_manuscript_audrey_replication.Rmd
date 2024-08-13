@@ -460,11 +460,11 @@ promis_without_postop
 #### Plot promis x anxiety dose, group by mental vs physical health
 ```{r plot_Promis_x_anxiety}
 #set mood versus physical domains
-mood_domains <- c("Quality_of_Life", 
-                "Mental_Health_and_Mood",
+mood_domains <- c("Mental_Health_and_Mood",
                 "Social_Activities_Satisfaction",
                 "Carrying_Out_Social_Activities",
                 "Emotional_Problems", 
+                "Quality_of_Life",
                 "PostOp.PROMIS.Mental.Score")
 
 physical_domains <- c("Physical_Health", 
