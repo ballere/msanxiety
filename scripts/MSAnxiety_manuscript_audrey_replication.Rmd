@@ -263,6 +263,48 @@ names(df_fascicles_volumes) <- fascicle_names_w_vol_suffix
 df_demo_and_fascicles <- cbind(df_everything_else, df_fascicles_prop, df_fascicles_volumes)
 ```
 
+##Anxiety Network from neurosynth (association, not uniformity)
+###read in file with fasciclexanxiety overlap, and define anxiety network
+```{r read_in_neurosynth_anxiety_network}
+neurosynth_anxiety_network_fascicle_overlap <- read.csv("/Users/eballer/BBL/msanxiety/results/streamline_volume_within_anxiety_network_association_neuro_maps_FDR_01.csv", header = T, sep = ",") %>% 
+  filter(fascicle %in% fascicle_names_no_cranial_nerves) %>%
+  slice(order(factor(fascicle, levels = fascicle_names_no_cranial_nerves))) %>% #get rid of cranial nerves up front 
+  replace(is.na(.), 0)
+
+# Total volume of healthy fascicles within brain
+total_fascicle_volume <- sum(neurosynth_anxiety_network_fascicle_overlap$num_voxels_total)
+
+```
+
+
+###Add columns in the main data frame indicating overall injury in the whole network, in the top 25 network (vol and prop), and bottom 75%
+```{r add_anxiety_and_dep_network_details_to_data_frame}
+
+#all of this has been checked - making sure prop * vol network = sum of damage
+
+df_demo_and_fascicles <- df_demo_and_fascicles %>%
+  
+  
+  mutate(mean_fascicle_prop_lost_no_cranial_nerves = rowMeans(across(all_of(fascicle_names_w_prop_suffix)))) %>%
+  mutate(mean_fascicle_volume_lost_no_cranial_nerves = rowMeans(across(all_of(fascicle_names_w_vol_suffix)))) %>%
+
+  #sum of total volume lost and proportion of volume lost 
+  mutate(sum_fascicle_vol_lost = rowSums(across(all_of(fascicle_names_w_vol_suffix)))) %>%
+  mutate(proportion_volume_lost_per_total_network_size_sum = sum_fascicle_vol_lost/total_fascicle_volume) %>%
+  
+  ##mean_uncinate
+  mutate(mean_UF_vol = (UF_L_vol + UF_R_vol)/2) %>%
+  mutate(mean_UF_prop = (UF_L_prop + UF_R_prop)/2) %>%
+  
+  ##mean_fornix
+  mutate(mean_fornix_volume = (F_L_vol + F_R_vol)/2) %>%
+  mutate(mean_fornix_prop = (F_L_prop + F_R_prop)/2) %>%
+           
+  ungroup()   
+
+#neurosynth_anxiety_network_fascicle_overlap
+```
+
 ### add PROMIS
 ```{r promis_data_handling}
 ##########################################################
@@ -320,6 +362,7 @@ hist(df_people_with_promis_data_scores_added$distance_from_scan/364,
 
 
 ```
+
 
 ## Demographics
 ### simple demographics
@@ -614,47 +657,7 @@ anxiety_dose_by_health_var_score_just_sick_and_healthy <- lmer(PROMIS_Score ~anx
 summary(anxiety_dose_by_health_var_score_just_sick_and_healthy)
 ```
 
-##Anxiety Network from neurosynth (association, not uniformity)
-###read in file with fasciclexanxiety overlap, and define anxiety network
-```{r read_in_neurosynth_anxiety_network}
-neurosynth_anxiety_network_fascicle_overlap <- read.csv("/Users/eballer/BBL/msanxiety/results/streamline_volume_within_anxiety_network_association_neuro_maps_FDR_01.csv", header = T, sep = ",") %>% 
-  filter(fascicle %in% fascicle_names_no_cranial_nerves) %>%
-  slice(order(factor(fascicle, levels = fascicle_names_no_cranial_nerves))) %>% #get rid of cranial nerves up front 
-  replace(is.na(.), 0)
 
-# Total volume of healthy fascicles within brain
-total_fascicle_volume <- sum(neurosynth_anxiety_network_fascicle_overlap$num_voxels_total)
-
-```
-
-
-###Add columns in the main data frame indicating overall injury in the whole network, in the top 25 network (vol and prop), and bottom 75%
-```{r add_anxiety_and_dep_network_details_to_data_frame}
-
-#all of this has been checked - making sure prop * vol network = sum of damage
-
-df_demo_and_fascicles <- df_demo_and_fascicles %>%
-  
-  
-  mutate(mean_fascicle_prop_lost_no_cranial_nerves = rowMeans(across(all_of(fascicle_names_w_prop_suffix)))) %>%
-  mutate(mean_fascicle_volume_lost_no_cranial_nerves = rowMeans(across(all_of(fascicle_names_w_vol_suffix)))) %>%
-
-  #sum of total volume lost and proportion of volume lost 
-  mutate(sum_fascicle_vol_lost = rowSums(across(all_of(fascicle_names_w_vol_suffix)))) %>%
-  mutate(proportion_volume_lost_per_total_network_size_sum = sum_fascicle_vol_lost/total_fascicle_volume) %>%
-  
-  ##mean_uncinate
-  mutate(mean_UF_vol = (UF_L_vol + UF_R_vol)/2) %>%
-  mutate(mean_UF_prop = (UF_L_prop + UF_R_prop)/2) %>%
-  
-  ##mean_fornix
-  mutate(mean_fornix_volume = (F_L_vol + F_R_vol)/2) %>%
-  mutate(mean_fornix_prop = (F_L_prop + F_R_prop)/2) %>%
-           
-  ungroup()   
-
-#neurosynth_anxiety_network_fascicle_overlap
-```
 
 
 #COLLAPSE anxiety dx and antianxiety meds with those plus depression, and anxiety dx OR on anxiety meds into 1 group -->> THIS IS THE MONEY
@@ -806,10 +809,53 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
 ```
 
 ### Uncinate **ACNP**
+#### Presence of Uncinate Lesions chisq - N.S.
+```{r uncinate_presence_of_lesions}
+### Basically, I'd like to answer the question - is it just a presence or absence of uncinate lesions, or is it the burden of uncinate lesions/
+### To do this, I perform a chisq to see if there is a statistically significant difference in the number of people with uncinate lesions within each of the diagnostic groups
+### I found that there are no statistically significant differences in the frequency of uncinate lesions between groups - meaning that it is not just the presence of lesions, but the impact
 
+#define group and make column for people who do have uncinate lesions and those who don't
+df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
+  filter(anxiety_dose != -1) %>% #n=371
+  mutate(has.uncinate.lesion = ifelse(mean_UF_vol >0, 1, 0)) #anywhere where there is *some* overlap counts as a 1 - they have an uncinate lesion, otherwise 0
+
+
+#define number of people within each group that have uncinate lesions
+uncinate_lesions_dose_0 <- df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(has.uncinate.lesion == 1 & anxiety_dose == 0) %>% count() #n=76
+uncinate_lesions_dose_1 <- df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(has.uncinate.lesion == 1 & anxiety_dose == 1) %>% count() #n=190
+uncinate_lesions_dose_2 <- df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(has.uncinate.lesion == 1 & anxiety_dose == 2) %>% count() #n=19
+
+#define total number of people in each group
+anxiety_total_dose_0 <- df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(anxiety_dose == 0) %>% count() #n=99
+anxiety_total_dose_1 <- df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(anxiety_dose == 1) %>% count() #n=249
+anxiety_total_dose_2 <- df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(anxiety_dose == 2) %>% count() #n=23
+
+#make table
+num_w_uncinate_lesions <- as.numeric(c(uncinate_lesions_dose_0, uncinate_lesions_dose_1, uncinate_lesions_dose_2))
+num_total <-as.numeric(c(anxiety_total_dose_0,anxiety_total_dose_1, anxiety_total_dose_2))
+df_2x3_presence_of_UF_lesions_by_total_people_per_dose <- data.frame(cbind(num_w_uncinate_lesions, num_total), row.names = c("MS+noAnxiety","MS+AnxietyorMed", "MS+AnxietyandMed"))
+
+#X-squared (Pearson's) X-squared(2,371) = 0.059833, p = 0.9705
+chisq_anxiety_dose <- chisq.test(x=df_2x3_presence_of_UF_lesions_by_total_people_per_dose)
+chisq_anxiety_dose
+
+#just healthy and super anxious/sick
+num_w_UF_just_healthy_and_sick <- as.numeric(c(uncinate_lesions_dose_0, uncinate_lesions_dose_2))
+num_total_just_healthy_and_sick <-as.numeric(c(anxiety_total_dose_0,anxiety_total_dose_2))
+df_2x2_UF_lesions_by_total_people_per_diagnosis_num_total_just_healthy_and_sick <- data.frame(cbind(num_w_UF_just_healthy_and_sick, num_total_just_healthy_and_sick), row.names = c("MS+noAnxiety", "MS+AnxietyandMed"))
+
+#X-squared(1,122) = 0.001529, p = 0.9688
+chisq_healthy_vs_sick <- chisq.test(x = df_2x2_UF_lesions_by_total_people_per_diagnosis_num_total_just_healthy_and_sick)
+chisq_healthy_vs_sick
+
+
+```
 
 #### Uncinate by anxiety diagnosis 
 ```{r uncinate_by_dx}
+### Having found that there is no association between the number of uncinate lesions and the anxiety dose, I next explored whether the *burden* of uncinate lesions differs by diagnosis/group
 
 #### Fx = F gives better results than FX = T
 
@@ -876,6 +922,7 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   print(right_vs_left_uncinate_anxiety_and_meds)
 ```
 
+
 #### Sensitivity
 ###### UF by depGroupVar (N.S)
 ```{r UF_by_depGroupVar}
@@ -889,23 +936,39 @@ df_dep <- df_demo_and_fascicles %>%
 table(df_dep$depDiagnosis) #MS+Dep n = 199; MS+noDep n = 99
 
 
-#mean UF, P = NS
+#mean UF, T=-1.7, P = NS
 dep_mean_UF_gam <- gam(mean_UF_vol ~ depDiagnosis + osex + s(PAT_AGE_AT_EXAM, k=4, fx=F), data = df_dep)
 summary(dep_mean_UF_gam)
 
 ```
 
-###### Fornix by Anxiety Dose (N.S)
+###### Fornix by Anxiety Diagnosis and Dose (N.S)
 ```{r fornixByAnxietyDose}
 
 #results: Anxiety dose NOT related to F_R when covarying for linear effects of age and sex, not in line with that one paper that found fornix differences
-
 #define group
+
+#anxiety diagnosis
+ df_empi_dx_network_proportions <- df_demo_and_fascicles %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds") %>%
+  mutate(subject = as.factor(EMPI)) %>%
+  mutate(Diagnosis = oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed) %>%
+  mutate(Diagnosis = ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="true_healthy", "MS-Anxiety", "MS+Anxiety")) %>%
+  mutate(Diagnosis = as.factor(Diagnosis)) %>%
+  ungroup() #n=122
+ 
+##### healthy vs sick
+#Fornix gam Diagnosis; DiagnosisMS+Anxiety    342.5      382.7   0.895   0.3726   = NS
+anxietyDiagnosis_mean_F_by_sex_gam <- gam(mean_fornix_volume ~ Diagnosis + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data = df_empi_dx_network_proportions)
+summary(anxietyDiagnosis_mean_F_by_sex_gam)
+
+#define group for dose
 df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
   filter(anxiety_dose != -1) 
 
-  #gam, Fornix mean anxiety_dose - NS
+  #gam, Fornix anxiety_dose    186.5      168.0   1.110    0.268  =NS
   anxietyGrouping_mean_F_by_sex_gam <- gam(mean_fornix_volume ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_mean_F_by_sex_gam)
 ```
@@ -1013,7 +1076,7 @@ prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar <-  ggplot(
 prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar
 ```
 
-### Sex Differences
+### Sex Differences lm and chisq
 ```{r diseaseXsexdiff}
 ############## sex diff
 #df_anxiety_disorder_by_sex <- 
@@ -1041,7 +1104,7 @@ anxiety_total_2 <- df_demo_and_fascicles_no_unclass_anxiety_dose %>% filter(anxi
 #make table
 num_w_anxiety_female <- as.numeric(c(anxiety_female_0, anxiety_female_1, anxiety_female_2))
 num_total <-as.numeric(c(anxiety_total_0,anxiety_total_1, anxiety_total_2))
-df_2x3_anxiety_score_by_total_people_per_diagnosis <- data.frame(cbind(num_w_anxiety_female, num_total), row.names = c("MS+AnxietyandMed", "MS+AnxietyorMed", "MS-Anxiety"))
+df_2x3_anxiety_score_by_total_people_per_diagnosis <- data.frame(cbind(num_w_anxiety_female, num_total), row.names = c("MS+noAnxiety","MS+AnxietyorMed", "MS+AnxietyandMed"))
 
 #X-squared (Pearson's) X-squared = 0.23427, df = 2, p-value = 0.8895
 chisq_anxiety_dose <- chisq.test(df_2x3_anxiety_score_by_total_people_per_diagnosis)
@@ -1050,7 +1113,7 @@ chisq_anxiety_dose
 #just healthy and super anxious/sick, X-squared = 0, df = 1, p-value = 1
 num_w_anxiety_female_just_healthy_and_sick <- as.numeric(c(anxiety_female_0, anxiety_female_2))
 num_total_just_healthy_and_sick <-as.numeric(c(anxiety_total_0,anxiety_total_2))
-df_2x2_anxiety_score_by_total_people_per_diagnosis_num_total_just_healthy_and_sick <- data.frame(cbind(num_w_anxiety_female_just_healthy_and_sick, num_total_just_healthy_and_sick), row.names = c("MS+AnxietyandMed", "MS-Anxiety"))
+df_2x2_anxiety_score_by_total_people_per_diagnosis_num_total_just_healthy_and_sick <- data.frame(cbind(num_w_anxiety_female_just_healthy_and_sick, num_total_just_healthy_and_sick), row.names = c("MS+noAnxiety", "MS+AnxietyandMed"))
 
 chisq_healthy_vs_sick <- chisq.test(df_2x2_anxiety_score_by_total_people_per_diagnosis_num_total_just_healthy_and_sick)
 chisq_healthy_vs_sick
