@@ -618,7 +618,7 @@ mental_health_t_sick_vs_healthy <- t.test(df_for_promis_plot_mental_vs_physical_
 mental_health_t_sick_vs_healthy
 ```
 
-##### Physical and Mental Health x anxiety dose intx
+##### Physical and Mental Health x anxiety dose intx -N.S.
 ```{r phys_and_mental_x_anxiety_dose}
 ###
 df_for_promis_plot_mental_vs_physical_healthy_no_summarize <- df_people_with_promis_data_scores_added_unique %>%
@@ -973,6 +973,55 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   summary(anxietyGrouping_mean_F_by_sex_gam)
 ```
 
+##### No steroids/IF -N.S. but low n's
+```{r no_steroids_or_if}
+#### Steroids and interferon are known to have psychiatric side effects
+### we repeated our analyses but removed these groups
+### Nothing sig but trend, probably because we lose N (2 people in MS+noA, 1 in MS+mildA, 2 in MS+severeA)
+
+### remove people on IF or steroids
+df_demo_and_fascicles_no_steroids_or_ifn <- df_demo_and_fascicles %>%
+  filter((On.Steroids == 0) & (On.Interferon == 0))
+
+### print demographics, MS+noA = 96, MS+mildA = 248, MS+severeA=21
+make_demographics_table_ms_anxiety_simple(data_frame = df_demo_and_fascicles_no_steroids_or_ifn[df_demo_and_fascicles_no_steroids_or_ifn$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified",])
+
+make_demographics_table_ms_anxiety_simple(data_frame = df_demo_and_fascicles_no_steroids_or_ifn[((df_demo_and_fascicles_no_steroids_or_ifn$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") & (df_demo_and_fascicles_no_steroids_or_ifn$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds")),])
+
+## Make df for Anxiety Diagnosis
+#define group
+  uncinate_by_dx_df <- df_demo_and_fascicles_no_steroids_or_ifn %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds") %>%
+  mutate(subject = as.factor(EMPI)) %>%
+  mutate(Diagnosis = oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed) %>%
+  mutate(Diagnosis = ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="true_healthy", "MS-Anxiety", "MS+Anxiety")) %>%
+  mutate(Diagnosis = as.factor(Diagnosis)) %>%
+ # dplyr::select(subject, osex, Diagnosis, PAT_AGE_AT_EXAM, UF_R_vol, UF_L_vol, F_R_vol, F_L_vol, mean_UF_vol) %>%
+  ungroup() 
+ 
+
+
+#bilateral UF ~ Diagnosis: DiagnosisMS+Anxiety    768.2      422.2   1.820   0.0715 .  trend, likely due to sample size
+disease_mean_UF_vol_gam <- gam(mean_UF_vol ~ Diagnosis + osex+s(PAT_AGE_AT_EXAM, k = 4, fx = F), data = uncinate_by_dx_df)
+summary(disease_mean_UF_vol_gam)
+
+
+
+##test Anxiety Severity Model
+#define group
+df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles_no_steroids_or_ifn %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
+  filter(anxiety_dose != -1) #n=371
+
+
+  #bilat anxiety dose + sex + age: anxiety_dose: anxiety_dose    369.9      189.7   1.949    0.052 . (trend, likely due to sample size)   
+  anxietyGrouping_mean_UF_by_sex_gam <- gam(mean_UF_vol ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = F), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
+  summary(anxietyGrouping_mean_UF_by_sex_gam)
+ 
+```
+
+
 #### Plots Uncinate R,L,mean Prop
 ```{r plots_uncinate}
   #proportion injured over R Uncinate prop
@@ -1076,7 +1125,7 @@ prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar <-  ggplot(
 prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar
 ```
 
-### Sex Differences lm and chisq
+### Sex Differences lm and chisq - N.S.
 ```{r diseaseXsexdiff}
 ############## sex diff
 #df_anxiety_disorder_by_sex <- 
@@ -1297,6 +1346,7 @@ summary(sex_by_age)
 
 #### healthy vs super sick - values that fdr correct, most not anxiety net
 ```{r individual_fascicle_disease_healthy_vs_super_sick}
+
 df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   mutate(anxiousAndMeds_or_healthy = oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed) %>%
   filter(anxiousAndMeds_or_healthy %in% c("true_healthy", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep")) %>%
