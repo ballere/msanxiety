@@ -62,17 +62,11 @@ Imaging exclusion
 Groups:
 1. Total unique individuals who also have MS - 1026
 2. Total unique who had good MIMoSA - 867 (lost 159)
-3. Remove people without MS provider, n=823 (lost 44)
-4. Remove people with bad streamline filtering, n=854 (lost 13)
-5. Remove people without MS provider, n=812 (lost 42)
+3. Remove people without MS provider, n=814 (lost 53)
 
 
 
-### testing mean UF in depression group  - NS!!!
-(previous script (~/BBL/msdepression/scripts/Biological_Psychiatry_Revision_Scripts/msdepression_n380_started_20230927_mm_BP_r1.Rmd)), lines 734 and  779-781
-  #bilat: depGroupVar        85.32     206.70   t=0.413    p=0.680    
-  disease_mean_UF_vol_lm <- lm(mean_UF_vol ~ depGroupVar + osex+PAT_AGE_AT_EXAM, data = dep_and_healthy_groups_for_ICD_analysis)
-  summary(disease_mean_UF_vol_lm)
+
 
 #figure brainstorming
 1. Flowchart of inclusion/exclusion
@@ -171,11 +165,11 @@ fascicle_proportions <- fascicle_proportions %>%
 #             Merge with data_empi              #
 ##########################################################
 
- #n = 812
+ #n = 814
 df_demo_and_fascicles <- df_people_with_good_mimosa %>% 
   left_join(fascicle_proportions, by = c("EMPI", "EXAM_DATE")) %>%
   filter(!is.na(CNII_L)) %>% #this is a sample fascicle that should have a value. if it does not, it means something is usually wrong with whole person. Remove rows with NAs, n=854, lost 13
-  filter(!is.na(Has.MS.Provider))  #remove people who don't have MS provider, n=823 (lost 42)
+  filter(!is.na(Has.MS.Provider))  #remove people who don't have MS provider, n=814 (lost 53)
 
 
 
@@ -201,7 +195,7 @@ lesion_volumes <- lesion_volumes %>%
 ##########################################################
 #             Merge lesion volumes with mimosa df        #
 ##########################################################
-#merge whole data set with fascicle proportions, n = 812
+#merge whole data set with fascicle proportions, n = 814
 df_demo_and_fascicles <- df_demo_and_fascicles %>%
   left_join(lesion_volumes, by = c("EMPI", "EXAM_DATE")) 
 
@@ -260,7 +254,7 @@ names(df_fascicles_volumes) <- fascicle_names_w_vol_suffix
 
 #combine back with data_fram
 #df_demo_and_fascicle_volumes_full <- cbind(df_everything_else, df_fascicle_volumes)
-df_demo_and_fascicles <- cbind(df_everything_else, df_fascicles_prop, df_fascicles_volumes)
+df_demo_and_fascicles <- cbind(df_everything_else, df_fascicles_prop, df_fascicles_volumes) #n=814
 ```
 
 ##Anxiety Network from neurosynth (association, not uniformity)
@@ -590,7 +584,7 @@ df_for_promis_plot_mental_vs_physical_healthy_test <- df_people_with_promis_data
                 mental_health_score,
                 phys_mental_diff_score)
 
-#anxiety_dose  -0.7345     0.2946  -2.493   0.0153 *  
+#anxiety_dose  -0.7345     0.2946  -2.493   0.0153 * 
 anxiety_dose_x_phys_score <- lm(physical_health_score ~ anxiety_dose, df_for_promis_plot_mental_vs_physical_healthy_test)
 summary(anxiety_dose_x_phys_score)
 
@@ -766,7 +760,7 @@ tibble_overall_summaries_by_sex <- df_disease_burden_unc_and_anx_net_collapsed_v
   
   df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>% filter (anxiety_dose != -1) #-1 is unclassified, 0 is no anxiety, 1 is diagnosis or on meds, 2 is diagnosis AND on meds, -> n = 371
   
-  #anxiety_dose  0.04955    0.01905   2.601  0.00966 ** 
+  #anxiety_dose  0.04849    0.01890   2.566   0.0107 *  
   anxietyGrouping_by_sex_mean_disease_gam <- gam(proportion_volume_lost_per_total_network_size_sum ~ anxiety_dose + osex+ s(PAT_AGE_AT_EXAM, k = 4, fx = F), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_by_sex_mean_disease_gam)
 ```
@@ -788,7 +782,7 @@ tibble_overall_summaries_by_sex <- df_disease_burden_unc_and_anx_net_collapsed_v
  
 ##### healthy vs sick
 
-#gam lesion volumes; DiagnosisMS+Anxiety   8765.2     2748.2   3.189  0.00183 ** 
+#gam lesion volumes; DiagnosisMS+Anxiety   8215.7     2702.7   3.040  0.00292 ** 
 volume_of_mimosa_lesions_gam <- gam(volume_of_mimosa_lesions ~ Diagnosis + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data = df_empi_dx_network_proportions)
 summary(volume_of_mimosa_lesions_gam)
 ```
@@ -801,7 +795,7 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   filter (anxiety_dose != -1) #n=371
 
   
- #bilat anxiety dose + sex + age: anxiety_dose     3995       1263   3.164  0.00169 ** 
+ #bilat anxiety dose + sex + age: anxiety_dose     3866       1254   3.084   0.0022 ** 
 
   anxiety_dose_volume_of_mimosa_lesions_by_sex_gam <- gam(volume_of_mimosa_lesions ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxiety_dose_volume_of_mimosa_lesions_by_sex_gam)
@@ -837,7 +831,7 @@ num_w_uncinate_lesions <- as.numeric(c(uncinate_lesions_dose_0, uncinate_lesions
 num_total <-as.numeric(c(anxiety_total_dose_0,anxiety_total_dose_1, anxiety_total_dose_2))
 df_2x3_presence_of_UF_lesions_by_total_people_per_dose <- data.frame(cbind(num_w_uncinate_lesions, num_total), row.names = c("MS+noAnxiety","MS+AnxietyorMed", "MS+AnxietyandMed"))
 
-#X-squared (Pearson's) X-squared(2,371) = 0.059833, p = 0.9705
+#X-squared (Pearson's) X-squared(2,372) = 0.077073, p = 0.9622
 chisq_anxiety_dose <- chisq.test(x=df_2x3_presence_of_UF_lesions_by_total_people_per_dose)
 chisq_anxiety_dose
 
@@ -846,7 +840,7 @@ num_w_UF_just_healthy_and_sick <- as.numeric(c(uncinate_lesions_dose_0, uncinate
 num_total_just_healthy_and_sick <-as.numeric(c(anxiety_total_dose_0,anxiety_total_dose_2))
 df_2x2_UF_lesions_by_total_people_per_diagnosis_num_total_just_healthy_and_sick <- data.frame(cbind(num_w_UF_just_healthy_and_sick, num_total_just_healthy_and_sick), row.names = c("MS+noAnxiety", "MS+AnxietyandMed"))
 
-#X-squared(1,122) = 0.001529, p = 0.9688
+#X-squared(1,123) = 0.0052081, p = 0.9425
 chisq_healthy_vs_sick <- chisq.test(x = df_2x2_UF_lesions_by_total_people_per_diagnosis_num_total_just_healthy_and_sick)
 chisq_healthy_vs_sick
 
@@ -873,7 +867,7 @@ chisq_healthy_vs_sick
  
 
 
-#bilateral UF ~ Diagnosis: DiagnosisMS+Anxiety    866.7      411.9   2.104   0.0375 *  
+#bilateral UF ~ Diagnosis: DiagnosisMS+Anxiety   816.97     404.08   2.022   0.0454 * 
 disease_mean_UF_vol_gam <- gam(mean_UF_vol ~ Diagnosis + osex+s(PAT_AGE_AT_EXAM, k = 4, fx = F), data = uncinate_by_dx_df)
 summary(disease_mean_UF_vol_gam)
 
@@ -894,7 +888,7 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   filter(anxiety_dose != -1) #n=371
 
 
-  #bilat anxiety dose + sex + age: anxiety_dose    394.7      185.7   2.126   0.0342 * 
+  #bilat anxiety dose + sex + age: anxiety_dose    383.3      184.3   2.080   0.0383 *  
   anxietyGrouping_mean_UF_by_sex_gam <- gam(mean_UF_vol ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = F), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_mean_UF_by_sex_gam)
  
@@ -905,19 +899,19 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
 ###### Laterality in uncinate
 ```{r laterality}
   #laterality 
-  #overall - t = -8.1948, df = 660.22, p-value = 1.304e-15
+  #overall - t = -8.2035, df = 661.94, p-value = 1.217e-15
   right_vs_left_uncinate <- t.test(df_demo_and_fascicles_no_unclass_anxiety_dose$UF_L_vol, df_demo_and_fascicles_no_unclass_anxiety_dose$UF_R_vol)
   print(right_vs_left_uncinate)
   
-  #healthy - t = -4.4646, df = 172.88, p-value = 1.443e-05
+  #healthy - t = -4.3999, df = 171.31, p-value = 1.898e-05
    right_vs_left_uncinate_healthy <- t.test(df_demo_and_fascicles_no_unclass_anxiety_dose$UF_L_vol[df_demo_and_fascicles_no_unclass_anxiety_dose$anxiety_dose == 0], df_demo_and_fascicles_no_unclass_anxiety_dose$UF_R_vol[df_demo_and_fascicles_no_unclass_anxiety_dose$anxiety_dose == 0])
   print(right_vs_left_uncinate_healthy)
   
-  #anxietydx or meds -t = -6.5586, df = 443.4, p-value = 1.516e-10
+  #anxietydx or meds, t = -6.5586, df = 443.4, p-value = 1.516e-10
   right_vs_left_uncinate_anxiety_or_meds <- t.test(df_demo_and_fascicles_no_unclass_anxiety_dose$UF_L_vol[df_demo_and_fascicles_no_unclass_anxiety_dose$anxiety_dose == 1], df_demo_and_fascicles_no_unclass_anxiety_dose$UF_R_vol[df_demo_and_fascicles_no_unclass_anxiety_dose$anxiety_dose == 1])
   print(right_vs_left_uncinate_anxiety_or_meds)
   
-  #anxious+meds,t = -2.2382, df = 40.97, p-value = 0.0307
+  #anxious+meds,t = -2.261, df = 42.723, p-value = 0.02891
    right_vs_left_uncinate_anxiety_and_meds <- t.test(df_demo_and_fascicles_no_unclass_anxiety_dose$UF_L_vol[df_demo_and_fascicles_no_unclass_anxiety_dose$anxiety_dose == 2], df_demo_and_fascicles_no_unclass_anxiety_dose$UF_R_vol[df_demo_and_fascicles_no_unclass_anxiety_dose$anxiety_dose == 2])
   print(right_vs_left_uncinate_anxiety_and_meds)
 ```
@@ -936,7 +930,7 @@ df_dep <- df_demo_and_fascicles %>%
 table(df_dep$depDiagnosis) #MS+Dep n = 199; MS+noDep n = 99
 
 
-#mean UF, T=-1.7, P = NS
+#mean UF, T=-1.678, P = NS
 dep_mean_UF_gam <- gam(mean_UF_vol ~ depDiagnosis + osex + s(PAT_AGE_AT_EXAM, k=4, fx=F), data = df_dep)
 summary(dep_mean_UF_gam)
 
@@ -959,7 +953,7 @@ summary(dep_mean_UF_gam)
   ungroup() #n=122
  
 ##### healthy vs sick
-#Fornix gam Diagnosis; DiagnosisMS+Anxiety    342.5      382.7   0.895   0.3726   = NS
+#Fornix gam Diagnosis; DiagnosisMS+Anxiety    283.0      375.6   0.753   0.4528   - NS
 anxietyDiagnosis_mean_F_by_sex_gam <- gam(mean_fornix_volume ~ Diagnosis + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data = df_empi_dx_network_proportions)
 summary(anxietyDiagnosis_mean_F_by_sex_gam)
 
@@ -968,7 +962,7 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
   filter(anxiety_dose != -1) 
 
-  #gam, Fornix anxiety_dose    186.5      168.0   1.110    0.268  =NS
+  #gam, Fornix anxiety_dose    173.1      166.7   1.038    0.300   - NS
   anxietyGrouping_mean_F_by_sex_gam <- gam(mean_fornix_volume ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_mean_F_by_sex_gam)
 ```
@@ -978,12 +972,13 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
 #### Steroids and interferon are known to have psychiatric side effects
 ### we repeated our analyses but removed these groups
 ### Nothing sig but trend, probably because we lose N (2 people in MS+noA, 1 in MS+mildA, 2 in MS+severeA)
+### Will not report these analyses, but just note number of people in the table who are on these things
 
 ### remove people on IF or steroids
 df_demo_and_fascicles_no_steroids_or_ifn <- df_demo_and_fascicles %>%
   filter((On.Steroids == 0) & (On.Interferon == 0))
 
-### print demographics, MS+noA = 96, MS+mildA = 248, MS+severeA=21
+### print demographics, MS+noA = 96, MS+mildA = 248, MS+severeA=22
 make_demographics_table_ms_anxiety_simple(data_frame = df_demo_and_fascicles_no_steroids_or_ifn[df_demo_and_fascicles_no_steroids_or_ifn$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified",])
 
 make_demographics_table_ms_anxiety_simple(data_frame = df_demo_and_fascicles_no_steroids_or_ifn[((df_demo_and_fascicles_no_steroids_or_ifn$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") & (df_demo_and_fascicles_no_steroids_or_ifn$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds")),])
@@ -1002,7 +997,7 @@ make_demographics_table_ms_anxiety_simple(data_frame = df_demo_and_fascicles_no_
  
 
 
-#bilateral UF ~ Diagnosis: DiagnosisMS+Anxiety    768.2      422.2   1.820   0.0715 .  trend, likely due to sample size
+#bilateral UF ~ Diagnosis: DiagnosisMS+Anxiety    718.8      413.2    1.74   0.0846 .   trend, likely due to sample size
 disease_mean_UF_vol_gam <- gam(mean_UF_vol ~ Diagnosis + osex+s(PAT_AGE_AT_EXAM, k = 4, fx = F), data = uncinate_by_dx_df)
 summary(disease_mean_UF_vol_gam)
 
@@ -1015,7 +1010,7 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles_no_steroi
   filter(anxiety_dose != -1) #n=371
 
 
-  #bilat anxiety dose + sex + age: anxiety_dose: anxiety_dose    369.9      189.7   1.949    0.052 . (trend, likely due to sample size)   
+  #bilat anxiety dose + sex + age: anxiety_dose: anxiety_dose    358.3      188.3   1.903   0.0578 .   (trend, likely due to sample size)   
   anxietyGrouping_mean_UF_by_sex_gam <- gam(mean_UF_vol ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = F), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_mean_UF_by_sex_gam)
  
@@ -1155,11 +1150,11 @@ num_w_anxiety_female <- as.numeric(c(anxiety_female_0, anxiety_female_1, anxiety
 num_total <-as.numeric(c(anxiety_total_0,anxiety_total_1, anxiety_total_2))
 df_2x3_anxiety_score_by_total_people_per_diagnosis <- data.frame(cbind(num_w_anxiety_female, num_total), row.names = c("MS+noAnxiety","MS+AnxietyorMed", "MS+AnxietyandMed"))
 
-#X-squared (Pearson's) X-squared = 0.23427, df = 2, p-value = 0.8895
+#X-squared (Pearson's) X-squared = 0.23182, df = 2, p-value = 0.8906
 chisq_anxiety_dose <- chisq.test(df_2x3_anxiety_score_by_total_people_per_diagnosis)
 chisq_anxiety_dose
 
-#just healthy and super anxious/sick, X-squared = 0, df = 1, p-value = 1
+#just healthy and super anxious/sick, X-squared = 2.9757e-31, df = 1, p-value = 1
 num_w_anxiety_female_just_healthy_and_sick <- as.numeric(c(anxiety_female_0, anxiety_female_2))
 num_total_just_healthy_and_sick <-as.numeric(c(anxiety_total_0,anxiety_total_2))
 df_2x2_anxiety_score_by_total_people_per_diagnosis_num_total_just_healthy_and_sick <- data.frame(cbind(num_w_anxiety_female_just_healthy_and_sick, num_total_just_healthy_and_sick), row.names = c("MS+noAnxiety", "MS+AnxietyandMed"))
@@ -1175,11 +1170,11 @@ chisq_healthy_vs_sick
 
 #simple lmer across whole network
 
-#overall - NS
+#overall - osex.L          -0.0154963  0.0180285  -0.860    0.391 - NS
 disease_between_sexes <- lm(proportion_volume_lost_per_total_network_size_sum ~ osex+ PAT_AGE_AT_EXAM, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
 summary(disease_between_sexes)
 
-# mean uncinate L - ns
+# mean uncinate L - osex.L          -152.317    174.353  -0.874    0.383 ns
 disease_between_sexes_UF_mean <- lm(mean_UF_vol ~ osex+ PAT_AGE_AT_EXAM, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
 summary(disease_between_sexes_UF_mean)
 
@@ -1205,13 +1200,13 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
 
 
 ### diagnosis by age interaction?
-#overall - NS for diagnosis
+#overall - DiagnosisMS+Anxiety  0.03966    0.02329   1.703   0.0893 .  NS for diagnosis
 diagnosis_by_age <- lm(proportion_volume_lost_per_total_network_size_sum ~ Diagnosis*PAT_AGE_AT_EXAM, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
 summary(diagnosis_by_age)
 
 #gam diagnosis - SPLINE SIGNIFICANT
-#s(PAT_AGE_AT_EXAM):DiagnosisMS-Anxiety 1.579  1.927 5.027  0.0138 * 
-#s(PAT_AGE_AT_EXAM):DiagnosisMS+Anxiety 1.988  2.379 5.205  0.0033 **
+#s(PAT_AGE_AT_EXAM):DiagnosisMS-Anxiety 1.581  1.930 5.026 0.01362 * 
+#s(PAT_AGE_AT_EXAM):DiagnosisMS+Anxiety 1.994  2.385 5.249 0.00313 **
 diagnosis_by_age_gam <- gam(proportion_volume_lost_per_total_network_size_sum ~ Diagnosis+s(PAT_AGE_AT_EXAM, by = Diagnosis, k=4, fx = F), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
 summary(diagnosis_by_age_gam)
 summary(diagnosis_by_age_gam)$s.table
@@ -1227,9 +1222,9 @@ plot_smooths_proportion_volume_lost_per_total_network_size_sum <- plot_smooths(
 plot_smooths_proportion_volume_lost_per_total_network_size_sum
 
 
-#uncinate mean
-#s(PAT_AGE_AT_EXAM):DiagnosisMS-Anxiety 1.006  1.013 23.95 2.10e-06 ***
-#s(PAT_AGE_AT_EXAM):DiagnosisMS+Anxiety 1.000  1.000 17.02 4.59e-05 ***
+#uncinate mean, DiagnosisMS+Anxiety    420.3      224.9   1.869   0.0624 . NS
+#s(PAT_AGE_AT_EXAM):DiagnosisMS-Anxiety 1.007  1.014 23.98 2.07e-06 ***
+#s(PAT_AGE_AT_EXAM):DiagnosisMS+Anxiety 1.000  1.000 17.15 4.36e-05 ***
 
 diagnosis_by_age_mean_UF_gam <- gam(mean_UF_vol ~ Diagnosis+s(PAT_AGE_AT_EXAM, by = Diagnosis, k=4, fx = F), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
 summary(diagnosis_by_age_mean_UF_gam)
@@ -1250,7 +1245,7 @@ plot_smooths_anxiety_diagnosis_by_age_mean_UF_vol
 
 
 ## Sex diff trajectories by age
-#overall - NS
+#overall - osex.L                  0.066402   0.075006   0.885  0.37658  NS
 sex_by_age <- lm(proportion_volume_lost_per_total_network_size_sum ~ osex*PAT_AGE_AT_EXAM, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
 summary(sex_by_age)
 
@@ -1281,16 +1276,16 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
 diagnosis_by_age <- lm(proportion_volume_lost_per_total_network_size_sum ~ anxiety_dose*PAT_AGE_AT_EXAM, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
 summary(diagnosis_by_age)
 
-#gam dose; s(PAT_AGE_AT_EXAM):anxiety_dose 3.046783 3.441174 5.334908 0.001092626
+#gam dose; s(PAT_AGE_AT_EXAM):anxiety_dose 2.058  2.452 4.972 0.00315 **
 diagnosis_by_age_gam <- gam(proportion_volume_lost_per_total_network_size_sum ~ anxiety_dose+s(PAT_AGE_AT_EXAM, by = anxiety_dose, k=4, fx = F), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
 summary(diagnosis_by_age_gam)
 summary(diagnosis_by_age_gam)$s.table
 #plot(diagnosis_by_age_gam)
 
 #gam factor - there is a linear dose effect per network size sum, as well as a sig age by anxiety relationship, but only in sick people
-#anxiety_dose_factor.L  0.08111    0.03267   2.482   0.0135 * 
-#(PAT_AGE_AT_EXAM):anxiety_dose_factor1 1.457  1.762 5.730  0.0139 *
-#s(PAT_AGE_AT_EXAM):anxiety_dose_factor2 1.927  2.326 1.924  0.1394  
+#anxiety_dose_factor.L  0.07788    0.03209   2.427   0.0157 * 
+#s(PAT_AGE_AT_EXAM):anxiety_dose_factor1 1.459  1.765 5.736  0.0138 *
+#s(PAT_AGE_AT_EXAM):anxiety_dose_factor2 1.972  2.372 2.128  0.1123  
 diagnosis_by_age_gam_factor <- gam(proportion_volume_lost_per_total_network_size_sum ~ anxiety_dose_factor+s(PAT_AGE_AT_EXAM, by = anxiety_dose_factor, k=4, fx = F), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
 summary(diagnosis_by_age_gam_factor)
 summary(diagnosis_by_age_gam_factor)$s.table
@@ -1307,14 +1302,14 @@ plot_smooths_proportion_volume_lost_per_total_network_size_sum
 
 #uncinate mean
 #dose
-#s(PAT_AGE_AT_EXAM):anxiety_dose   2  2.001 7.423 0.00069 ***
+#s(PAT_AGE_AT_EXAM):anxiety_dose 1.003  1.005 12.59 0.000427 ***
 diagnosis_by_age_mean_UF_gam <- gam(mean_UF_vol ~ anxiety_dose+s(PAT_AGE_AT_EXAM, by = anxiety_dose, k=4, fx = F), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
 summary(diagnosis_by_age_mean_UF_gam)
 summary(diagnosis_by_age_mean_UF_gam)$s.table
 
 #factor
-#s(PAT_AGE_AT_EXAM):anxiety_dose_factor1 1.002  1.004 17.439 3.73e-05 ***
-#s(PAT_AGE_AT_EXAM):anxiety_dose_factor2 1.002  1.004  0.014    0.913   
+#s(PAT_AGE_AT_EXAM):anxiety_dose_factor1 1.002  1.004 17.462 3.69e-05 ***
+#s(PAT_AGE_AT_EXAM):anxiety_dose_factor2 1.002  1.005  0.029    0.872 
 diagnosis_by_age_mean_UF_gam_factor <- gam(mean_UF_vol ~ anxiety_dose_factor+s(PAT_AGE_AT_EXAM, by = anxiety_dose_factor, k=4, fx = F), data = df_demo_and_fascicles_no_unclass_anxiety_dose, method = "REML")
 summary(diagnosis_by_age_mean_UF_gam_factor)
 summary(diagnosis_by_age_mean_UF_gam_factor)$s.table
@@ -1331,7 +1326,7 @@ plot_smooths_anxiety_dose_by_age_mean_UF_factor <- plot_smooths(
 plot_smooths_anxiety_dose_by_age_mean_UF_factor
 
 ## Sex diff trajectories by age
-#overall - NS
+#overall -osex.L                  0.066402   0.075006   0.885  0.37658  NS
 sex_by_age <- lm(proportion_volume_lost_per_total_network_size_sum ~ osex*PAT_AGE_AT_EXAM, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
 summary(sex_by_age)
 
@@ -1363,12 +1358,12 @@ names(fascicle_lm) <- fascicle_names_w_vol_suffix
 fascicle_lm_anova <- lapply(fascicle_lm, anova)
 
 
-#uncorrected
+#uncorrected, n=33
 fascicle_anova_lm_p <- sapply(fascicle_lm_anova, function(v) v$"Pr(>F)"[1])
 fascicle_anova_lm_p05_unc <- as.data.frame(fascicle_anova_lm_p[fascicle_anova_lm_p < 0.05])
 print(fascicle_anova_lm_p05_unc) 
 
-#fdr corrected
+#fdr corrected, n = 11
 fascicle_anova_lm_fdr <- fdr_anova_generic(fascicle_lm_anova, 1, print_unc_df = TRUE)
 print(fascicle_anova_lm_fdr)
 
@@ -1385,13 +1380,13 @@ names(fascicle_gam) <- fascicle_names_w_vol_suffix
 fascicle_anova_gam <- lapply(fascicle_gam, anova)
 
 
-#uncorrected
+#uncorrected (38 items)
 fascicle_anova_gam_p <- sapply(fascicle_anova_gam, function(v) v$p.pv[2])
 print(as.data.frame(fascicle_anova_gam_p))
 fascicle_anova_gam_p05_unc <- as.data.frame(fascicle_anova_gam_p[fascicle_anova_gam_p < 0.05])
 print(fascicle_anova_gam_p05_unc) 
 
-#fdr corrected
+#fdr corrected (18 items correct)
 fascicle_anova_gam_fdr <- round(p.adjust(fascicle_anova_gam_p, method = "fdr"),3)
 fascicle_anova_gam_fdr_p05 <- as.data.frame(fascicle_anova_gam_fdr[fascicle_anova_gam_fdr < 0.05])
 print(fascicle_anova_gam_fdr_p05) 
@@ -1400,7 +1395,7 @@ print(fascicle_anova_gam_fdr_p05)
 #### Parametric all fascicles
 ```{r individual_fascicle_disease_anxiety_dose}
 
-### 3 meet FDR - C_FPH_R_prop	0.037			C_FP_R_prop	0.042			DRTT_R_prop	0.042
+### 
 df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
   filter(anxiety_dose != -1) %>%
@@ -1417,11 +1412,11 @@ names(fascicle_lm) <- fascicle_names_w_vol_suffix
 fascicle_anova_lm <- lapply(fascicle_lm, anova)
 
 
-#fdr corrected
+#fdr corrected, n = 1
 fascicle_anova_lm_fdr <- fdr_anova_generic(fascicle_anova_lm, 1, print_unc_df = TRUE)
 print(fascicle_anova_lm_fdr)
 
-#uncorrected
+#uncorrected, n = 19
 fascicle_anova_lm_p <- sapply(fascicle_anova_lm, function(v) v$"Pr(>F)"[1])
 fascicle_anova_lm_p05_unc <- as.data.frame(fascicle_anova_lm_p[fascicle_anova_lm_p < 0.05])
 print(fascicle_anova_lm_p05_unc) 
@@ -1439,13 +1434,13 @@ names(fascicle_gam) <- fascicle_names_w_vol_suffix
 fascicle_anova_gam <- lapply(fascicle_gam, anova)
 
 
-#uncorrected
+#uncorrected, n = 30
 fascicle_anova_gam_p <- sapply(fascicle_anova_gam, function(v) v$p.pv[2])
 print(as.data.frame(fascicle_anova_gam_p))
 fascicle_anova_gam_p05_unc <- as.data.frame(fascicle_anova_gam_p[fascicle_anova_gam_p < 0.05])
 print(fascicle_anova_gam_p05_unc) 
 
-#fdr corrected
+#fdr corrected, n = 11
 fascicle_anova_gam_fdr <- round(p.adjust(fascicle_anova_gam_p, method = "fdr"),3)
 fascicle_anova_gam_fdr_p05 <- as.data.frame(fascicle_anova_gam_fdr[fascicle_anova_gam_fdr < 0.05])
 print(fascicle_anova_gam_fdr_p05) 
@@ -1454,7 +1449,7 @@ print(fascicle_anova_gam_fdr_p05)
 
 ##### Overall disease, within and outside anxiety net
 ```{r}
-#n = 371
+#n = 372
 
 df_disease_burden_unc_and_anx_net_collapsed_variables <- df_demo_and_fascicles %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") 
@@ -1469,107 +1464,6 @@ prop_injured_by_anxiety_burden_collapsed_vars_plot
 ```
 
 
-##### Plots C_FPH_R_prop	0.037			C_FP_R_prop	0.042			DRTT_R_prop	0.042
-
-```{r plots_areas_that_FDR_correct}
- 
-#n=371
-
-df_disease_burden_unc_and_anx_net_collapsed_variables <- df_demo_and_fascicles %>%
-  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified")  
-  
-
-
- #proportion injured over C_FPH_R_prop
-prop_injured_C_FPH_R_prop_by_anxiety_burden_collapsed_vars_plot <-  ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x=oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, y=C_FPH_R_prop, fill=oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed)) +
-  geom_violin() +  
-  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
-  theme(axis.text.x = element_text(size=8, angle = 45, vjust = 0.5))
-prop_injured_C_FPH_R_prop_by_anxiety_burden_collapsed_vars_plot
-
- #proportion injured over C_FPH_R_prop - geom_bar
-means_by_anxiety_dose <- c(mean(df_disease_burden_unc_and_anx_net_collapsed_variables$C_FPH_R_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="true_healthy"]),
-                                mean(df_disease_burden_unc_and_anx_net_collapsed_variables$C_FPH_R_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="Has.Anxietydx.OR.Antianxiety.Meds"]),
-                                mean(df_disease_burden_unc_and_anx_net_collapsed_variables$C_FPH_R_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep"]))
-
-df_C_FPH_R_prop_mean_by_anxiety_dose <- data.frame(cbind(means_by_anxiety_dose, c("true_healthy", "Has.Anxietydx.OR.Antianxiety.Meds", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep")))
-
-names(df_C_FPH_R_prop_mean_by_anxiety_dose) <- c("C_FPH_R_prop", "Anxiety_dose")
-
-df_C_FPH_R_prop_mean_by_anxiety_dose <- df_C_FPH_R_prop_mean_by_anxiety_dose %>%
-  mutate(mean_C_FPH_R_prop = as.numeric(C_FPH_R_prop)) %>%
-  mutate(Anxiety_dose = factor(Anxiety_dose, levels = unique(Anxiety_dose)))
-                        
-prop_injured_C_FPH_R_prop_by_anxiety_burden_collapsed_vars_plot_bar <-  ggplot(df_C_FPH_R_prop_mean_by_anxiety_dose, aes(x=Anxiety_dose, y=mean_C_FPH_R_prop, fill=Anxiety_dose)) +
-  geom_bar(stat="identity") +  
-  ylim(0,1)+
-#  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
-  theme(axis.text.x = element_text(size=8, angle = 45, vjust = 0.5),
-        panel.background = element_rect(colour = "white", fill = "white"))
-prop_injured_C_FPH_R_prop_by_anxiety_burden_collapsed_vars_plot_bar
-
-
- #proportion injured over C_FP_R_prop
-prop_injured_C_FP_R_prop_prop_by_anxiety_burden_collapsed_vars_plot <-  ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x=oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, y=C_FP_R_prop, fill=oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed)) +
-  geom_violin() +  
-  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
-  theme(axis.text.x = element_text(size=8, angle = 45, vjust = 0.5))
-prop_injured_C_FP_R_prop_prop_by_anxiety_burden_collapsed_vars_plot
-
- #proportion injured over C_FP_R_prop - geom_bar
-means_by_anxiety_dose <- c(mean(df_disease_burden_unc_and_anx_net_collapsed_variables$C_FP_R_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="true_healthy"]),
-                                mean(df_disease_burden_unc_and_anx_net_collapsed_variables$C_FP_R_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="Has.Anxietydx.OR.Antianxiety.Meds"]),
-                                mean(df_disease_burden_unc_and_anx_net_collapsed_variables$C_FP_R_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep"]))
-
-df_C_FP_R_prop_mean_by_anxiety_dose <- data.frame(cbind(means_by_anxiety_dose, c("true_healthy", "Has.Anxietydx.OR.Antianxiety.Meds", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep")))
-
-names(df_C_FP_R_prop_mean_by_anxiety_dose) <- c("C_FP_R_prop", "Anxiety_dose")
-
-df_C_FP_R_prop_mean_by_anxiety_dose <- df_C_FP_R_prop_mean_by_anxiety_dose %>%
-  mutate(mean_C_FP_R_prop = as.numeric(C_FP_R_prop)) %>%
-  mutate(Anxiety_dose = factor(Anxiety_dose, levels = unique(Anxiety_dose)))
-                        
-prop_injured_C_FP_R_prop_by_anxiety_burden_collapsed_vars_plot_bar <-  ggplot(df_C_FP_R_prop_mean_by_anxiety_dose, aes(x=Anxiety_dose, y=mean_C_FP_R_prop, fill=Anxiety_dose)) +
-  geom_bar(stat="identity") +  
-  ylim(0,1)+
-#  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
-  theme(axis.text.x = element_text(size=8, angle = 45, vjust = 0.5),
-        panel.background = element_rect(colour = "white", fill = "white"))
-prop_injured_C_FP_R_prop_by_anxiety_burden_collapsed_vars_plot_bar
-
-
-
-
- #proportion injured over DRTT_R_prop
-prop_injured_DRTT_R_prop_prop_by_anxiety_burden_collapsed_vars_plot <-  ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x=oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, y=DRTT_R_prop, fill=oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed)) +
-  geom_violin() +  
-  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
-  theme(axis.text.x = element_text(size=8, angle = 45, vjust = 0.5))
-prop_injured_DRTT_R_prop_prop_by_anxiety_burden_collapsed_vars_plot
-
- #proportion injured over DRTT_R_prop - geom_bar
-means_by_anxiety_dose <- c(mean(df_disease_burden_unc_and_anx_net_collapsed_variables$DRTT_R_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="true_healthy"]),
-                                mean(df_disease_burden_unc_and_anx_net_collapsed_variables$DRTT_R_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="Has.Anxietydx.OR.Antianxiety.Meds"]),
-                                mean(df_disease_burden_unc_and_anx_net_collapsed_variables$DRTT_R_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep"]))
-
-df_DRTT_R_prop_mean_by_anxiety_dose <- data.frame(cbind(means_by_anxiety_dose, c("true_healthy", "Has.Anxietydx.OR.Antianxiety.Meds", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep")))
-
-names(df_DRTT_R_prop_mean_by_anxiety_dose) <- c("DRTT_R_prop", "Anxiety_dose")
-
-df_DRTT_R_prop_mean_by_anxiety_dose <- df_DRTT_R_prop_mean_by_anxiety_dose %>%
-  mutate(mean_DRTT_R_prop = as.numeric(DRTT_R_prop)) %>%
-  mutate(Anxiety_dose = factor(Anxiety_dose, levels = unique(Anxiety_dose)))
-                        
-prop_injured_DRTT_R_prop_by_anxiety_burden_collapsed_vars_plot_bar <-  ggplot(df_DRTT_R_prop_mean_by_anxiety_dose, aes(x=Anxiety_dose, y=mean_DRTT_R_prop, fill=Anxiety_dose)) +
-  geom_bar(stat="identity") +  
-  ylim(0,1)+
-#  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
-  theme(axis.text.x = element_text(size=8, angle = 45, vjust = 0.5),
-        panel.background = element_rect(colour = "white", fill = "white"))
-prop_injured_C_FP_R_prop_by_anxiety_burden_collapsed_vars_plot_bar
-
-
-```
 
 ###Promis data in UF - groups too small
 #### Uncinate by anxiety diagnosis (N.S) 
@@ -1590,7 +1484,7 @@ prop_injured_C_FP_R_prop_by_anxiety_burden_collapsed_vars_plot_bar
  
 
 
-#bilateral UF ~ Diagnosis: N.S.
+#bilateral UF ~ Diagnosis: DiagnosisMS+Anxiety   -187.4      885.1  -0.212    0.835 N.S.
 disease_mean_UF_vol_gam <- gam(mean_UF_vol ~ Diagnosis + osex+s(PAT_AGE_AT_EXAM, k = 4, fx = F), data = uncinate_by_dx_df)
 summary(disease_mean_UF_vol_gam)
 
@@ -1610,7 +1504,7 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_people_with_promis_data_scor
   filter(anxiety_dose != -1) #n=79
 
 
-  #bilat anxiety dose - NS
+  #bilat anxiety dose -anxiety_dose   -46.71     423.41  -0.110 0.912524   NS
   anxietyGrouping_mean_UF_by_sex_gam <- gam(mean_UF_vol ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = F), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxietyGrouping_mean_UF_by_sex_gam)
  
