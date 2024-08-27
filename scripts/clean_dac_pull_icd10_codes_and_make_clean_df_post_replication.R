@@ -70,10 +70,10 @@ data_pull <- rbind(data_pt1, data_pt2) %>%
   mutate(all_icd10_dx = "NA")
 
 #assemble new data frame and change names of ICD9/10 columns to reflect that they contain multiple dx
-data_pull$all_icd10_dx <- map(data_pull$EMPI, get_all_unique_ICD10_diagnoses)
-#for(row in 1:dim(data_pull)[1]) {
-#  data_pull$all_icd10_dx[row] <- get_all_unique_ICD10_diagnoses(data_pull$EMPI[row])
-#}
+
+for(row in 1:dim(data_pull)[1]) {
+  data_pull$all_icd10_dx[row] <- get_all_unique_ICD10_diagnoses(data_pull$EMPI[row])
+}
 
 columns_to_make_integer <- c("ACCESSION_NUM", "PAT_AGE_AT_EXAM","MRI_ENC_AGE","CURRENT_AGE","hemoglobin", "WBC","RBC","B12","FOLATE", "TSH", "RPR","CSFAPPEAR1","CSFAPPEAR4","CSFCOLOR1", "CSFCOLOR4","CSFTUBE","CSFTUBE4","PHQ.2","PHQ.9") #removed "VitD", not in new pull for some reason
 
