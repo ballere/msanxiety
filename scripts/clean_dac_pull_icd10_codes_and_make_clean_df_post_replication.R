@@ -158,7 +158,7 @@ data_final_rds <-data_pull %>%
   mutate(PHQ.9_zero = ifelse((Has.PHQ9==1) & PHQ.9 == 0, 1, 0)) %>%
   
   #Create variables based on psychiatric diagnoses
-  mutate(Has.depdx = ifelse(grepl("F3[2:4]", all_icd10_dx), 1, 0)) %>%
+  mutate(Has.depdx = ifelse(grepl("F3[2-4](\\.|\\d)*", all_icd10_dx), 1, 0)) %>%
   mutate(Has.anxietydx = ifelse(grepl("F4", all_icd10_dx), 1, 0)) %>%
   mutate(Has.CannabisUsedx = ifelse(grepl("F12", all_icd10_dx), 1, 0)) %>%
   mutate(Has.Anxietydx.Or.Antianxietymed = ifelse((Has.anxietydx==1) | (On.Anxiolytics==1),1,0)) %>%

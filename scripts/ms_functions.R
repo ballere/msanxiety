@@ -93,6 +93,91 @@ make_demographics_table_ms_anxiety_simple<- function(data_frame) {
   
 }
 
+make_demographics_table_ms_w_promis_anxiety<- function(data_frame) {
+  #subset demographics
+  
+  #subset demographics
+  
+  listVars <- c("Race", 
+                "Sex",
+                "Age",
+                "Has.anxietydx", 
+                "On.Anxiolytics",
+                "oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed",
+                "anxiety_dose",
+                "on_anti_cd20",
+                "on_interferon",
+                "on_steroids",
+                "on_dmt",
+                "PHQ2",
+                "PHQ9",
+                "volume_of_mimosa_lesions", 
+                "mean_UF_vol",
+                "proportion_volume_lost_per_total_network_size_sum",
+                "Quality_of_Life", 
+                "Physical_Health", 
+                "Mental_Health_and_Mood",
+                "Social_Activities_Satisfaction",
+                "Carrying_Out_Social_Activities",
+                "Carrying_Out_Physical_Activities",
+                "Emotional_Problems", 
+                "Fatique_Average",
+                "PostOp.PROMIS.Physical.Score",
+                "PostOp.PROMIS.Mental.Score") #Race 1 = caucasian, Sex 1 = M age = years
+  
+  
+  #for_parse <- paste0("data.frame(data_frame$race_binarized, data_frame$sex_binarized, data_frame$PAT_AGE_AT_EXAM, data_frame$depGroupVar, data_frame$PHQ.2, data_frame$PHQ.9)")
+  # for_parse <- paste0(data.frame(data_frame$race_binarized,
+  for_parse <- paste0("data.frame(data_frame$RACE, 
+                      data_frame$sex_binarized, 
+                      data_frame$PAT_AGE_AT_EXAM, 
+                      data_frame$Has.anxietydx, 
+                      data_frame$On.Anxiolytics,
+                      data_frame$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed,
+                      data_frame$anxiety_dose,
+                      data_frame$On.Anti_cd20,
+                      data_frame$On.Interferon,
+                      data_frame$On.Steroids,
+                      data_frame$On.Dmt,
+                      data_frame$PHQ.2, 
+                      data_frame$PHQ.9, 
+                      data_frame$volume_of_mimosa_lesions, 
+                      data_frame$mean_UF_vol,
+                      data_frame$proportion_volume_lost_per_total_network_size_sum,
+                      data_frame$Quality_of_Life, 
+                      data_frame$Physical_Health, 
+                      data_frame$Mental_Health_and_Mood, 
+                      data_frame$Social_Activities_Satisfaction,
+                      data_frame$Carrying_Out_Social_Activities, 
+                      data_frame$Carrying_Out_Physical_Activities, 
+                      data_frame$Emotional_Problems, data_frame$Fatique_Average,
+                      data_frame$PostOp.PROMIS.Physical.Score, 
+                      data_frame$PostOp.PROMIS.Mental.Score)")
+  
+  
+  demo <- eval(parse(text = for_parse)) 
+  names(demo) <- c(listVars)
+  
+  #Change categorical values to have names
+  
+  ### uncomment the line below if you want to binarize race
+  # demo$Race <- ifelse(demo$Race == 1, "Caucasian", "Non-caucasian")
+  demo$Sex <- ifelse(demo$Sex == 1, "Male", "Female")
+  
+  
+  
+  #Define Categorical Variables
+  cat_variables <- c("Race", "Sex", "oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed", "Has.anxietydx","On.Anxiolytics","on_anti_cd20", "on_interferon", "on_steroids", "on_dmt")
+  title <- c(paste0("Demographics_Anxiety"))
+  
+  
+  #Groups - true healthy, anxiety OR anti anxiety meds, anxiety AND antianxiety meds
+  demo_table_by_on_depAndAnxiety_true_healthy <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed"))
+  print(demo_table_by_on_depAndAnxiety_true_healthy , showAllLevels = TRUE)
+  
+  
+}
+
 make_demographics_table_ms_anxiety<- function(data_frame) {
   #subset demographics
   
@@ -485,6 +570,7 @@ make_demographics_table_ms_w_promis<- function(data_frame) {
   
 
 }
+
 
 
 make_demographics_table_ms_w_promis_hydra_k2_simple<- function(data_frame) {
@@ -1072,6 +1158,32 @@ data_summary <- function(x) {
   return(c(y=m,ymin=ymin,ymax=ymax))
 }
 #### Stats#####
+
+### extract t, p, cohen f, effect size from gam
+gam_summary_stats <- function(gam_model) {
+  ### Extract T, P, Eff size, eff size size
+  #t val
+  t <- round(summary(gam_model)$p.t[2], 3)
+  
+  #
+  p <- round(summary(gam_model)$p.p[2], 3)
+  
+  #f2 - R2/1-R2
+  r2 <- summary(gam_model)$r.sq
+  f2 <- round(r2/(1-r2), 3)
+  
+  #eff size summary
+  eff_size = case_when(
+    f2 >=0.35 ~ "large",
+    f2 >= 0.15 & f2 < 0.35 ~ "medium",
+    f2 >= 0.02 & f2 < 0.15 ~ "small",
+    f2 >= 0 & f2 < 0.02 ~"minimal"
+  )
+  
+  text = paste0("(T = ", t, ", P = ", p, ", Cohen's f2 =  ", f2, ", Effect size = ", eff_size, ")")
+  return(text)
+}
+
 #for hydra k3
 cohen_d_onepair <- function(data_frame, subtypeA, subtypeB, measure, hydra_cluster) {
   grpA_for_parse <- paste0("data_frame$", measure, "[which(data_frame$Hydra_k", hydra_cluster, " == ", subtypeA, ")]")
