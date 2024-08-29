@@ -121,7 +121,7 @@ HCP template:
 <br>
 
 ### * Functions for project *
-[ms_functions.R](https://github.com/ballere/msanxiety/tree/main/scripts/ms_functions.R)
+[ms_functions.R](https://github.com/ballere/msanxiety/tree/main/scripts/FINAL_scripts_clean/ms_functions.R)
 
 ### Sample Construction
 
@@ -129,7 +129,7 @@ We first constructed our sample from n=890 individuals who were diagnosed with m
 
 The following code takes the n=890 sample, and goes through a variety of exclusions to get the final n. Specifically, after excluding 78 participants with poor mimosa quality (23) or streamline filtering (55), 812 participants were eligible for anxiety classification.  Participants with MS were identified from the electronic medical record and stratified into three age- and sex-matched groups: 1) MS without anxiety (MS+noA); 2) MS with mild anxiety (MS+mildA), 3) MS with severe anxiety (MS+severeA). MS+noA included persons who had no psychiatric diagnosis, took no psychiatric medications, and were asymptomatic on PHQ 2/9 (n = 99, age (SD) = 49.4 (11.7), % female = 75). MS+mildA included persons with either a diagnosis of an anxiety disorder (F40*) or a prescription for an anti-anxiety medication (n = 249, age (SD) = 47.1 (11.1), % female = 82). MS+severeA included persons who had both an anxiety disorder and were taking an anti-anxiety medication (n = 23, age (SD) = 47.1 (12.4), % female = 78).
 
-[clean_dac_pull_icd10_codes_and_make_clean_df.R](https://github.com/ballere/msanxiety/tree/main/scripts/clean_dac_pull_icd10_codes_and_make_clean_df.R)
+[clean_dac_pull_icd10_codes_and_make_clean_df.R](https://github.com/ballere/msanxiety/tree/main/FINAL_scripts_clean/clean_dac_pull_icd10_codes_and_make_clean_df_post_replication.R)
 
 ### Automated white matter lesion segmentation
 
@@ -152,7 +152,7 @@ For more details, please see [https://pennlinc.github.io/msdepression/](https://
 
 This script is run locally, on R. It does all second level/group data analysis. Main steps summarized below.
 
-[MSAnxiety_manuscript_audrey_replication.Rmd](https://github.com/ballere/msanxiety/tree/main/scripts/MSAnxiety_manuscript_audrey_replication.Rmd)
+[MSAnxiety_manuscript_audrey_replication.Rmd](https://github.com/ballere/msanxiety/tree/main/scripts/FINAL_scripts_clean/MSAnxiety_manuscript_post_replication_prop_FINAL.Rmd)
 
 
 #### Disease burden summary measures
