@@ -21,7 +21,7 @@ library(stringr)
 library(MatchIt)
 library(ggpubr)
 library(tidymv)
-
+library(viridis)  # Ensure you have the viridis package
 #functions
 source("~/BBL/msanxiety/scripts/ms_functions.R")
 ```
@@ -535,7 +535,8 @@ promis_without_postop
 
 ```
 
-#### Plot promis x anxiety dose, group by mental vs physical health
+#### Plot 
+#####Promis x anxiety dose, group by mental vs physical health
 ```{r plot_Promis_x_anxiety}
 #set mood versus physical domains
 mood_domains <- c("Mental_Health_and_Mood",
@@ -553,12 +554,12 @@ physical_domains <- c("Physical_Health",
 # Reshape the data from wide to long format
 df_for_promis_plot_mental_vs_physical_healthy <- df_people_with_promis_data_scores_added_unique %>%
   group_by(EMPI) %>%
-  mutate(physical_health_score = sum(across(physical_domains))/length(physical_domains)) %>%
-  mutate(mental_health_score = sum(across(mood_domains))/length(mood_domains)) %>%
+  mutate("Physical Health Burden" = sum(across(physical_domains))/length(physical_domains)) %>%
+  mutate("Mental Health Burden" = sum(across(mood_domains))/length(mood_domains)) %>%
   dplyr::select(EMPI,
                 anxiety_dose,
-                physical_health_score,
-                mental_health_score) %>%
+                "Physical Health Burden",
+                "Mental Health Burden") %>%
   gather(health_variable, PROMIS_Score, -anxiety_dose, -EMPI) %>% #this is like a melt. Keeps empi and depGroupVar out of the melt
   group_by(anxiety_dose, health_variable) %>%
   summarise(mean_promis_score = mean(PROMIS_Score , na.rm = TRUE),
@@ -566,91 +567,49 @@ df_for_promis_plot_mental_vs_physical_healthy <- df_people_with_promis_data_scor
             sem_promis_score = sd(PROMIS_Score, na.rm = TRUE) / sqrt(n())) %>%
   ungroup() 
 
+#custom_colors_simple <- c("#9ACD32", "#4B0082") #done in alphabetical order. 
 
-custom_colors <- c("physical_health_score" = "#9ACD32","mental_health_score" =  "#4B0082")
+# Define the desired order of legend items
+desired_order <- c("Physical Health Burden", "Mental Health Burden")
 
-custom_colors_simple <- c("#9ACD32", "#4B0082") #done in alphabetical order. 
+# Ensure the factor levels are set to match the desired order
+df_for_promis_plot_mental_vs_physical_healthy$health_variable <- factor(
+  df_for_promis_plot_mental_vs_physical_healthy$health_variable,
+  levels = desired_order
+)
 
+# Define custom colors, ensuring the names match the levels of the factor
+custom_colors_simple <- c("Physical Health Burden" = "#4B0082",  # Purple
+                          "Mental Health Burden" = "#9ACD32")  # Green
 
- 
 # Create the ggplot
 promis_with_post_op_mental_vs_physical <- ggplot(df_for_promis_plot_mental_vs_physical_healthy, aes(x = anxiety_dose, y = mean_promis_score, color = health_variable)) +
   geom_line(size = 1.2) +
-  scale_x_continuous(breaks = c(0, 1, 2)) +
+  scale_x_continuous(breaks = c(0, 1, 2),  # Keep numeric values on x-axis
+                     labels = c("MS+noA", "MS+mildA", "MS+severeA")) +  # Set custom labels for each numeric value
   scale_y_continuous(limits = c(0, 7)) +
   geom_errorbar(aes(ymin = mean_promis_score - sem_promis_score, ymax = mean_promis_score + sem_promis_score), width = 0.2, size = 0.8)  +
   theme(
-       # plot.title = element_text(size=16, hjust = 0.55),
-      #  axis.text = element_text(size = 14, colour = "black"), axis.title.x = element_blank(), 
-      #  axis.title.y = element_text(size=16),
+        axis.text.y = element_text(size=12, colour = "black"),
+        axis.title.y = element_text(size=16),
         axis.line = element_line(size = 1.5, colour = "black", linetype=1),
-      #  legend.position = "none",
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(size=12, colour = "black"),
+        legend.title = element_blank(),
+        legend.position = c(0.8, 0.95),  # Move legend to upper right of plot area (0.9, 0.9 corresponds to top-right)
+        legend.background = element_rect(fill = "white"),  # Set legend background to white
+        legend.key = element_rect(fill = "white", color = "white"),  # Set legend key background to white
         aspect.ratio=7/5,
         panel.background = element_rect(colour = "white", fill = "white")) +
-  labs(x = "Anxiety Dose", y = "Mean PROMIS Score", 
-       title = "PROMIS Scores by Anxiety Dose") +
-#  scale_color_brewer(palette = "Set3") 
-  scale_color_manual(values = custom_colors_simple)
+  labs(y= "Mean PROMIS Score") +
+  scale_color_manual(values = custom_colors_simple, breaks = desired_order)
+
 promis_with_post_op_mental_vs_physical
+#save pdf
+pdf(file=paste0(homedir, "/results/Figures_for_msanxiety_paper/promis_with_post_op_mental_vs_physical.pdf"))
+  promis_with_post_op_mental_vs_physical
+dev.off()
 
-# Create the ggplot -> bar
-promis_with_post_op_mental_vs_physical_bar <- ggplot(df_for_promis_plot_mental_vs_physical_healthy, aes(x = anxiety_dose, y = mean_promis_score, fill = health_variable)) +
-  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +  
-  geom_errorbar(aes(ymin = mean_promis_score - sem_promis_score, ymax = mean_promis_score + sem_promis_score), 
-                width = 0.2, size = 0.8, color = "black", position = position_dodge(width = 0.9)) +
-  scale_x_continuous(breaks = c(0, 1, 2)) +
-  scale_y_continuous(limits = c(0, 7)) +
-  theme_minimal() +
-  labs(x = "Anxiety Dose", y = "Mean PROMIS Score", 
-       title = "PROMIS Scores by Anxiety Dose") +
-  scale_fill_manual(values = custom_colors)
-
-promis_with_post_op_mental_vs_physical_bar
-
-  
-```
-
-####Test promis*anxiety dose  stats
-#####Physical and Mental Health together
-```{r phsy_and_mental_step_x_anxiety_dose}
-###
-df_for_promis_plot_mental_vs_physical_healthy_test <- df_people_with_promis_data_scores_added_unique %>%
-  group_by(EMPI) %>%
-  mutate(physical_health_score = sum(across(physical_domains))/length(physical_domains)) %>%
-  mutate(mental_health_score = sum(across(mood_domains))/length(mood_domains)) %>%
-  mutate(phys_mental_diff_score = physical_health_score-mental_health_score) %>%
-  dplyr::select(EMPI,
-                anxiety_dose,
-                physical_health_score,
-                mental_health_score,
-                phys_mental_diff_score)
-
-#anxiety_dose  -0.7345     0.2946  -2.493   0.0153 * 
-anxiety_dose_x_phys_score <- lm(physical_health_score ~ anxiety_dose, df_for_promis_plot_mental_vs_physical_healthy_test)
-summary(anxiety_dose_x_phys_score)
-
-#anxiety_dose  -1.1181     0.2681  -4.171 9.59e-05 ***
-anxiety_dose_x_mental_score <- lm(mental_health_score ~ anxiety_dose, df_for_promis_plot_mental_vs_physical_healthy_test)
-summary(anxiety_dose_x_mental_score)
-
-#anxiety_dose   0.3836     0.2391   1.605    0.114
-anxiety_dose_x_diff_score <- lm(phys_mental_diff_score ~ anxiety_dose, df_for_promis_plot_mental_vs_physical_healthy_test)
-summary(anxiety_dose_x_diff_score)
-
-#looking at anxiety_dose = 2 only, 0.22 -> sample size too small
-
-mental_vs_physical_health_t <- t.test(df_for_promis_plot_mental_vs_physical_healthy_test$physical_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], df_for_promis_plot_mental_vs_physical_healthy_test$mental_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], paired=F)
-mental_vs_physical_health_t
-
-#looking at physical health and mental health in sick vs healthy
-
-#physical health, sick vs healthy - t = 2.0048, df = 8.6555, p-value = 0.07722
-physical_health_t_sick_vs_healthy <- t.test(df_for_promis_plot_mental_vs_physical_healthy_test$physical_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==0], df_for_promis_plot_mental_vs_physical_healthy_test$physical_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], paired=F)
-physical_health_t_sick_vs_healthy
-
-#mental health, sick vs healthy - t = 3.6838, df = 8.1324, p-value = 0.006011
-mental_health_t_sick_vs_healthy <- t.test(df_for_promis_plot_mental_vs_physical_healthy_test$mental_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==0], df_for_promis_plot_mental_vs_physical_healthy_test$mental_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], paired=F)
-mental_health_t_sick_vs_healthy
 ```
 
 ##### Physical and Mental Health x anxiety dose intx -N.S.
@@ -924,7 +883,7 @@ summary(disease_mean_UF_prop_gam)
   gam_summary_stats(disease_mean_UF_prop_gam)
 ```
 
-#### Uncinate by Anxiety Dose (vol and prop)
+#### Uncinate by Anxiety Dose 
 ```{r uncinateByAnxietyDose}
 
 #### Fx = F gives better results than FX = T
@@ -1077,107 +1036,128 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles_no_steroi
 ```
 
 
-#### Plots Uncinate R,L,mean Prop
+#### Plots 
+#####Uncinate R,L,mean Prop
 ```{r plots_uncinate}
   #proportion injured over R Uncinate prop
-  # Of note, PROP AND VOL ARE LINEARLY RELATED -> USE PROP FOR ANALYSIS OTHERWISE THE GRAPHS BECOME CONFUSING TO LOOK AT. PROP is proportion of total fascicle injury
+ 
+#n=372
+df_mean_UF_mean_by_anxiety_severity <- df_demo_and_fascicles %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
+  filter(anxiety_dose != -1) %>%
+  mutate(anxiety_severity = ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "true_healthy", "MS+noA", 
+                                   ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "Has.Anxietydx.OR.Antianxiety.Meds", "MS+mildA", "MS+severeA"))) %>% 
+  mutate(anxiety_severity = factor(anxiety_severity, levels = c("MS+noA", "MS+mildA", "MS+severeA"))) %>%
+  mutate(mean_UF_prop = mean_UF_prop*100) %>%
+  group_by(anxiety_severity) %>%
+  summarise(mean_UF_mean = round(mean(mean_UF_prop , na.rm = TRUE),0),
+            sd_UF = sd(mean_UF_prop, na.rm = TRUE),
+            sem_UF = sd(mean_UF_prop, na.rm = TRUE) / sqrt(n())) %>%
+  mutate(anxiety_severity = factor(anxiety_severity, levels = unique(anxiety_severity))) %>%
+  ungroup() 
+  
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar <-  ggplot(df_mean_UF_mean_by_anxiety_severity, aes(x=anxiety_severity, y=mean_UF_mean, fill=anxiety_severity)) +
+  geom_bar(stat="identity", width = .6) +  
+  geom_errorbar(aes(ymin = mean_UF_mean - sem_UF, ymax = mean_UF_mean + sem_UF), width = 0.2, size = 0.8)  +
+  scale_fill_viridis(discrete = TRUE, option = "D") +  # Use Viridis color scale
+  ylim(0,45)+
+  theme(axis.text.x = element_text(size=12, colour = "black"),
+        axis.text.y = element_text(size=12, colour = "black"),
+        axis.title.y = element_text(size=16, colour = "black"),
+        axis.title.x = element_blank(),
+        axis.line = element_line(linewidth = 1.5, colour="black"),
+        legend.position = "none",
+        panel.background = element_rect(colour = "white", fill = "white")) + 
+  labs(y = "Percent (%) of Uncinate Injured")
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar
 
-#n=371
+
+#save pdf
+pdf(file=paste0(homedir, "/results/Figures_for_msanxiety_paper/UF_anxiety_severity_bar.pdf"))
+  prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar
+dev.off()
+
+
+```
+##### Uncinate Violin Plot
+```{r uncinate_violin}
+#### trying prettier things
 df_disease_burden_unc_and_anx_net_collapsed_variables <- df_demo_and_fascicles %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
-  filter(anxiety_dose != -1)
+  filter(anxiety_dose != -1) %>%
+  mutate(anxiety_severity = ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "true_healthy", "MS+noA", 
+                                   ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "Has.Anxietydx.OR.Antianxiety.Meds", "MS+mildA", "MS+severeA"))) %>% 
+  mutate(anxiety_severity = factor(anxiety_severity, levels = c("MS+noA", "MS+mildA", "MS+severeA"))) %>%
+  mutate(mean_UF_prop = mean_UF_prop*100) 
 
 
-prop_injured_R_uncinate_by_anxiety_burden_collapsed_vars_plot <-  ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x=oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, y=UF_R_prop, fill=oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed)) +
-  geom_violin() +  
+# Create the plot with narrower violins and error bars
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x = anxiety_severity, y = mean_UF_prop, fill = anxiety_severity)) +
+  geom_violin(width = 0.6, alpha =1.5, color = "black", trim = FALSE) +  # Adjust violin width and transparency
   geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
-  theme(axis.text.x = element_text(size=8, angle = 45, vjust = 0.5))
-prop_injured_R_uncinate_by_anxiety_burden_collapsed_vars_plot
+  ylim(0,100) +
+  #geom_errorbar(aes(ymin = mean_UF_prop - sem_UF_prop, ymax = mean_UF_prop + sem_UF_prop), width = 0.2, color = "black") +  # Add error bars
+  scale_fill_viridis(discrete = TRUE, option = "D") +  # Use Viridis color scale
+  #theme_minimal(base_size = 14) +  # Use a minimal theme with a base font size
+  theme(
+    axis.text.x = element_text(size = 12, colour = "black"),  # Rotate x-axis labels for better readability
+    axis.text.y = element_text(size = 12, colour = "black"),
+    axis.title.y = element_text(size = 16, colour = "black"),
+    axis.title.x = element_blank(),
+    axis.line = element_line(linewidth = 1.5, colour = "black"),
+    legend.position = "none",
+    panel.background = element_rect(colour = "white", fill = "white"),
+    plot.margin = margin(10, 10, 10, 10)  # Add margins around the plot
+  ) + 
+  labs(y = "Percent (%) of Uncinate Injured")
 
- #proportion injured over R Uncinate prop - geom_bar
-means_by_anxiety_dose <- c(mean(df_disease_burden_unc_and_anx_net_collapsed_variables$UF_R_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="true_healthy"]),
-                                mean(df_disease_burden_unc_and_anx_net_collapsed_variables$UF_R_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="Has.Anxietydx.OR.Antianxiety.Meds"]),
-                                mean(df_disease_burden_unc_and_anx_net_collapsed_variables$UF_R_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep"]))
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot
 
-df_UF_R_mean_by_anxiety_dose <- data.frame(cbind(means_by_anxiety_dose, c("true_healthy", "Has.Anxietydx.OR.Antianxiety.Meds", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep")))
-
-names(df_UF_R_mean_by_anxiety_dose) <- c("mean_UF_R", "Anxiety_dose")
-
-df_UF_R_mean_by_anxiety_dose <- df_UF_R_mean_by_anxiety_dose %>%
-  mutate(mean_UF_R = as.numeric(mean_UF_R)) %>%
-  mutate(Anxiety_dose = factor(Anxiety_dose, levels = unique(Anxiety_dose)))
-                        
-prop_injured_R_uncinate_by_anxiety_burden_collapsed_vars_plot_bar <-  ggplot(df_UF_R_mean_by_anxiety_dose, aes(x=Anxiety_dose, y=mean_UF_R, fill=Anxiety_dose)) +
-  geom_bar(stat="identity") +  
-  ylim(0,0.5)+
-#  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
-  theme(axis.text.x = element_text(size=8, angle = 45, vjust = 0.5),
-        panel.background = element_rect(colour = "white", fill = "white"))
-prop_injured_R_uncinate_by_anxiety_burden_collapsed_vars_plot_bar
-
-
-  #proportion injured over L Uncinate prop
-prop_injured_L_uncinate_by_anxiety_burden_collapsed_vars_plot <-  ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x=oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, y=UF_L_prop, fill=oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed)) +
-  geom_violin() +  
-  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
-  theme(axis.text.x = element_text(size=8, angle = 45, vjust = 0.5))
-prop_injured_L_uncinate_by_anxiety_burden_collapsed_vars_plot
+#save pdf
+pdf(file=paste0(homedir, "/results/Figures_for_msanxiety_paper/UF_anxiety_severity_violin.pdf"))
+  prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot
+dev.off()
 
 
-
- #proportion injured over L Uncinate prop - geom_bar
-means_by_anxiety_dose <- c(mean(df_disease_burden_unc_and_anx_net_collapsed_variables$UF_L_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="true_healthy"]),
-                                mean(df_disease_burden_unc_and_anx_net_collapsed_variables$UF_L_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="Has.Anxietydx.OR.Antianxiety.Meds"]),
-                                mean(df_disease_burden_unc_and_anx_net_collapsed_variables$UF_L_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep"]))
-
-df_UF_L_mean_by_anxiety_dose <- data.frame(cbind(means_by_anxiety_dose, c("true_healthy", "Has.Anxietydx.OR.Antianxiety.Meds", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep")))
-
-names(df_UF_L_mean_by_anxiety_dose) <- c("mean_UF_L", "Anxiety_dose")
-
-df_UF_L_mean_by_anxiety_dose <- df_UF_L_mean_by_anxiety_dose %>%
-  mutate(mean_UF_L = as.numeric(mean_UF_L)) %>%
-  mutate(Anxiety_dose = factor(Anxiety_dose, levels = unique(Anxiety_dose)))
-                        
-prop_injured_L_uncinate_by_anxiety_burden_collapsed_vars_plot_bar <-  ggplot(df_UF_L_mean_by_anxiety_dose, aes(x=Anxiety_dose, y=mean_UF_L, fill=Anxiety_dose)) +
-  geom_bar(stat="identity") +  
-  ylim(0,0.5)+
-#  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
-  theme(axis.text.x = element_text(size=8, angle = 45, vjust = 0.5),
-        panel.background = element_rect(colour = "white", fill = "white"))
-prop_injured_L_uncinate_by_anxiety_burden_collapsed_vars_plot_bar
-
-#mean UF
+```
+##### Geom point
+```{r geom_point}
+#### trying prettier things
+df_disease_burden_unc_and_anx_net_collapsed_variables <- df_demo_and_fascicles %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
+  filter(anxiety_dose != -1) %>%
+  mutate(anxiety_severity = ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "true_healthy", "MS+noA", 
+                                   ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "Has.Anxietydx.OR.Antianxiety.Meds", "MS+mildA", "MS+severeA"))) %>% 
+  mutate(anxiety_severity = factor(anxiety_severity, levels = c("MS+noA", "MS+mildA", "MS+severeA"))) %>%
+  mutate(mean_UF_prop = mean_UF_prop*100) 
 
 
-  #proportion injured over mean Uncinate prop
-prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <-  ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x=oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed, y=mean_UF_prop, fill=oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed)) +
-  geom_violin() +  
-  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
-  theme(axis.text.x = element_text(size=8, angle = 45, vjust = 0.5))
+# Create the plot with narrower violins, viridis colors, and horizontal lines at means
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x = anxiety_severity, y = mean_UF_prop, color = anxiety_severity)) +
+  geom_point(position = position_jitter(.1), size = 2, alpha = 0.8) +  # Add points with jitter using viridis colors
+  stat_summary(fun = "mean", geom = "crossbar", width = 0.3, color = "black", size = 0.5) +  # Add horizontal lines at means
+  scale_color_viridis(discrete = TRUE, option = "D") +  # Use Viridis color scale for points
+  theme(
+    axis.text.x = element_text(size = 12, colour = "black"),  # X-axis labels
+    axis.text.y = element_text(size = 12, colour = "black"),  # Y-axis labels
+    axis.title.y = element_text(size = 16, colour = "black"),  # Y-axis title
+    axis.title.x = element_blank(),  # Remove X-axis title
+    axis.line = element_line(linewidth = 1.5, colour = "black"),  # Axis lines
+    legend.position = "none",  # Remove legend
+    panel.background = element_rect(colour = "white", fill = "white")  # Background
+  ) + 
+  labs(y = "Percent (%) of Uncinate Injured")  # Y-axis label
+
+# Display the plot
 prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot
 
 
+#save pdf
+pdf(file=paste0(homedir, "/results/Figures_for_msanxiety_paper/UF_anxiety_severity_dot.pdf"))
+  prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot
+dev.off()
 
- #proportion injured over mean Uncinate prop - geom_bar
-means_by_anxiety_dose <- c(mean(df_disease_burden_unc_and_anx_net_collapsed_variables$mean_UF_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="true_healthy"]),
-                                mean(df_disease_burden_unc_and_anx_net_collapsed_variables$mean_UF_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="Has.Anxietydx.OR.Antianxiety.Meds"]),
-                                mean(df_disease_burden_unc_and_anx_net_collapsed_variables$mean_UF_prop[df_disease_burden_unc_and_anx_net_collapsed_variables$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep"]))
 
-df_mean_UF_mean_by_anxiety_dose <- data.frame(cbind(means_by_anxiety_dose, c("true_healthy", "Has.Anxietydx.OR.Antianxiety.Meds", "Has.Anxiety.And.On.Anxiety.Meds.Inc.Dep")))
-
-names(df_mean_UF_mean_by_anxiety_dose) <- c("mean_UF_mean", "Anxiety_dose")
-
-df_mean_UF_mean_by_anxiety_dose <- df_mean_UF_mean_by_anxiety_dose %>%
-  mutate(mean_UF_mean = as.numeric(mean_UF_mean)) %>%
-  mutate(Anxiety_dose = factor(Anxiety_dose, levels = unique(Anxiety_dose)))
-                        
-prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar <-  ggplot(df_mean_UF_mean_by_anxiety_dose, aes(x=Anxiety_dose, y=mean_UF_mean, fill=Anxiety_dose)) +
-  geom_bar(stat="identity") +  
-  ylim(0,0.5)+
-#  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
-  theme(axis.text.x = element_text(size=8, angle = 45, vjust = 0.5),
-        panel.background = element_rect(colour = "white", fill = "white"))
-prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar
 ```
 
 ### Sex Differences lm and chisq - N.S.
