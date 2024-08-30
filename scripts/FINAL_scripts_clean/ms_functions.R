@@ -1183,6 +1183,32 @@ gam_summary_stats <- function(gam_model) {
   return(text)
 }
 
+lm_summary_stats <- function(lm_model, which_variable) {
+  ### Extract T, P, Eff size, eff size size
+  #picks whatever variable you want, intercept is 1, first actual variable would be 2, etc
+  #t val
+  t <- round(summary(lm_model)[["coefficients"]][, "t value"][which_variable], 3)
+  
+  #p
+  p <- round(summary(lm_model)[["coefficients"]][, "Pr(>|t|)"][which_variable],3)
+
+
+  #f2 - R2/1-R2
+  r2 <- summary(lm_model)$r.squared
+  f2 <- round(r2/(1-r2), 3)
+  
+  #eff size summary
+  eff_size = case_when(
+    f2 >=0.35 ~ "large",
+    f2 >= 0.15 & f2 < 0.35 ~ "medium",
+    f2 >= 0.02 & f2 < 0.15 ~ "small",
+    f2 >= 0 & f2 < 0.02 ~"minimal"
+  )
+  
+  text = paste0("(T = ", t, ", P = ", p, ", Cohen's f2 =  ", f2, ", Effect size = ", eff_size, ")")
+  return(text)
+}
+
 #for hydra k3
 cohen_d_onepair <- function(data_frame, subtypeA, subtypeB, measure, hydra_cluster) {
   grpA_for_parse <- paste0("data_frame$", measure, "[which(data_frame$Hydra_k", hydra_cluster, " == ", subtypeA, ")]")

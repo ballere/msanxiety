@@ -440,7 +440,9 @@ print(chisq)
 fisher_test <- fisher.test(df_2x2_promis_score_by_total_people_per_diagnosis)
 print(fisher_test)
 ```
-#### Plot promis x anxiety dose
+
+#### Plot 
+##### Plot promis x anxiety dose
 ```{r plot_Promis_x_anxiety}
 #set mood versus physical domains
 mood_domains <- c("Quality_of_Life", 
@@ -535,7 +537,7 @@ promis_without_postop
 
 ```
 
-#### Plot 
+
 #####Promis x anxiety dose, group by mental vs physical health
 ```{r plot_Promis_x_anxiety}
 #set mood versus physical domains
@@ -609,6 +611,56 @@ promis_with_post_op_mental_vs_physical
 pdf(file=paste0(homedir, "/results/Figures_for_msanxiety_paper/promis_with_post_op_mental_vs_physical.pdf"))
   promis_with_post_op_mental_vs_physical
 dev.off()
+
+```
+####Test promis*anxiety dose  stats
+#####Physical and Mental Health together
+```{r phsy_and_mental_step_x_anxiety_dose}
+###
+df_for_promis_plot_mental_vs_physical_healthy_test <- df_people_with_promis_data_scores_added_unique %>%
+  group_by(EMPI) %>%
+  mutate(physical_health_score = sum(across(physical_domains))/length(physical_domains)) %>%
+  mutate(mental_health_score = sum(across(mood_domains))/length(mood_domains)) %>%
+  mutate(phys_mental_diff_score = physical_health_score-mental_health_score) %>%
+  dplyr::select(EMPI,
+                anxiety_dose,
+                physical_health_score,
+                mental_health_score,
+                phys_mental_diff_score)
+
+
+#looking at anxiety_dose = 2 only, 0.22 -> sample size too small
+
+mental_vs_physical_health_t <- t.test(df_for_promis_plot_mental_vs_physical_healthy_test$physical_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], df_for_promis_plot_mental_vs_physical_healthy_test$mental_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], paired=F)
+mental_vs_physical_health_t
+
+#looking at physical health and mental health in sick vs healthy
+
+#physical health, sick vs healthy - t = 2.0048, df = 8.6555, p-value = 0.07722
+physical_health_t_sick_vs_healthy <- t.test(df_for_promis_plot_mental_vs_physical_healthy_test$physical_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==0], df_for_promis_plot_mental_vs_physical_healthy_test$physical_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], paired=F)
+physical_health_t_sick_vs_healthy
+
+#mental health, sick vs healthy - t = 3.6838, df = 8.1324, p-value = 0.006011
+mental_health_t_sick_vs_healthy <- t.test(df_for_promis_plot_mental_vs_physical_healthy_test$mental_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==0], df_for_promis_plot_mental_vs_physical_healthy_test$mental_health_score[df_for_promis_plot_mental_vs_physical_healthy_test$anxiety_dose ==2], paired=F)
+mental_health_t_sick_vs_healthy
+
+
+###linear models
+#anxiety_dose  -0.7345     0.2946  -2.493   0.0153 * ; (T = -2.493, P = 0.015, Cohen's f2 =  0.1, Effect size = small)
+anxiety_dose_x_phys_score <- lm(physical_health_score ~ anxiety_dose, df_for_promis_plot_mental_vs_physical_healthy_test)
+summary(anxiety_dose_x_phys_score)
+lm_summary_stats(lm_model = anxiety_dose_x_phys_score, which_variable = 2)
+
+#anxiety_dose  -1.1181     0.2681  -4.171 9.59e-05 ***; (T = -4.171, P = 0, Cohen's f2 =  0.281, Effect size = medium)
+anxiety_dose_x_mental_score <- lm(mental_health_score ~ anxiety_dose, df_for_promis_plot_mental_vs_physical_healthy_test)
+summary(anxiety_dose_x_mental_score)
+lm_summary_stats(lm_model = anxiety_dose_x_mental_score, which_variable = 2)
+
+#anxiety_dose   0.3836     0.2391   1.605    0.114; (T = 1.605, P = 0.114, Cohen's f2 =  0.042, Effect size = small) - delta between physical and mental health NS
+anxiety_dose_x_diff_score <- lm(phys_mental_diff_score ~ anxiety_dose, df_for_promis_plot_mental_vs_physical_healthy_test)
+summary(anxiety_dose_x_diff_score)
+lm_summary_stats(lm_model = anxiety_dose_x_diff_score, which_variable = 2)
+
 
 ```
 
@@ -857,7 +909,7 @@ chisq_healthy_vs_sick
 
 ```
 
-#### Uncinate by anxiety diagnosis (vol and prop)
+#### Uncinate by anxiety diagnosis (prop)
 ```{r uncinate_by_dx}
 ### Having found that there is no association between the number of uncinate lesions and the anxiety dose, I next explored whether the *burden* of uncinate lesions differs by diagnosis/group
 
