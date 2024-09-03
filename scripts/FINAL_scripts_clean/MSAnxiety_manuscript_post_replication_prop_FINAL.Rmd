@@ -1111,7 +1111,7 @@ df_mean_UF_mean_by_anxiety_severity <- df_demo_and_fascicles %>%
 prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar <-  ggplot(df_mean_UF_mean_by_anxiety_severity, aes(x=anxiety_severity, y=mean_UF_mean, fill=anxiety_severity)) +
   geom_bar(stat="identity", width = .6) +  
   geom_errorbar(aes(ymin = mean_UF_mean - sem_UF, ymax = mean_UF_mean + sem_UF), width = 0.2, size = 0.8)  +
-  scale_fill_viridis(discrete = TRUE, option = "D") +  # Use Viridis color scale
+  scale_fill_viridis(discrete = TRUE, option = "D", direction = -1) +  # Use Viridis color scale
   ylim(0,45)+
   theme(axis.text.x = element_text(size=12, colour = "black"),
         axis.text.y = element_text(size=12, colour = "black"),
@@ -1119,6 +1119,7 @@ prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar <-  ggplot(
         axis.title.x = element_blank(),
         axis.line = element_line(linewidth = 1.5, colour="black"),
         legend.position = "none",
+        aspect.ratio = 7/5,
         panel.background = element_rect(colour = "white", fill = "white")) + 
   labs(y = "Percent (%) of Uncinate Injured")
 prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar
@@ -1129,6 +1130,24 @@ pdf(file=paste0(homedir, "/results/Figures_for_msanxiety_paper/UF_anxiety_severi
   prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar
 dev.off()
 
+
+
+### try horizontal
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar_horiz <-  ggplot(df_mean_UF_mean_by_anxiety_severity, aes(y=anxiety_severity, x=mean_UF_mean, fill=anxiety_severity)) +
+  geom_bar(stat="identity", width = .6) +  
+  geom_errorbar(aes(xmin = mean_UF_mean - sem_UF, xmax = mean_UF_mean + sem_UF), width = 0.2, size = 0.8)  +
+  scale_fill_viridis(discrete = TRUE, option = "D", direction = -1) +  # Use Viridis color scale
+  xlim(0,45)+
+  theme(axis.text.x = element_text(size=12, colour = "black"),
+        axis.text.y = element_text(size=12, colour = "black"),
+        axis.title.x = element_text(size=16, colour = "black"),
+        axis.title.y = element_blank(),
+        axis.line = element_line(linewidth = 1.5, colour="black"),
+        legend.position = "none",
+        aspect.ratio = 7/5,
+        panel.background = element_rect(colour = "white", fill = "white")) + 
+  labs(x = "Percent (%) of Uncinate Injured")
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_bar_horiz
 
 ```
 ##### Uncinate Violin Plot
@@ -1145,11 +1164,14 @@ df_disease_burden_unc_and_anx_net_collapsed_variables <- df_demo_and_fascicles %
 
 # Create the plot with narrower violins and error bars
 prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x = anxiety_severity, y = mean_UF_prop, fill = anxiety_severity)) +
-  geom_violin(width = 0.6, alpha =1.5, color = "black", trim = FALSE) +  # Adjust violin width and transparency
-  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
+  geom_violin(width = 0.5, alpha =.5, color = "black", trim = FALSE) +  # Adjust violin width and transparency
+  stat_summary(fun = "mean", geom = "crossbar", width = 0.3, color = "black", size = 0.5) +  # Add horizontal lines at means
+  #geom_point(position = position_jitter(seed = 1, width = 0.2)) +
+
+#  geom_boxplot(width=0.1, color="black", fill="white", outlier.size = 0.2) + 
   ylim(0,100) +
   #geom_errorbar(aes(ymin = mean_UF_prop - sem_UF_prop, ymax = mean_UF_prop + sem_UF_prop), width = 0.2, color = "black") +  # Add error bars
-  scale_fill_viridis(discrete = TRUE, option = "D") +  # Use Viridis color scale
+  scale_fill_viridis(discrete = TRUE, option = "D", direction = -1) +  # Use Viridis color scale
   #theme_minimal(base_size = 14) +  # Use a minimal theme with a base font size
   theme(
     axis.text.x = element_text(size = 12, colour = "black"),  # Rotate x-axis labels for better readability
@@ -1159,7 +1181,8 @@ prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_di
     axis.line = element_line(linewidth = 1.5, colour = "black"),
     legend.position = "none",
     panel.background = element_rect(colour = "white", fill = "white"),
-    plot.margin = margin(10, 10, 10, 10)  # Add margins around the plot
+    plot.margin = margin(10, 10, 10, 10),  # Add margins around the plot
+    aspect.ratio = 5/5
   ) + 
   labs(y = "Percent (%) of Uncinate Injured")
 
@@ -1186,9 +1209,9 @@ df_disease_burden_unc_and_anx_net_collapsed_variables <- df_demo_and_fascicles %
 
 # Create the plot with narrower violins, viridis colors, and horizontal lines at means
 prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x = anxiety_severity, y = mean_UF_prop, color = anxiety_severity)) +
-  geom_point(position = position_jitter(.1), size = 2, alpha = 0.8) +  # Add points with jitter using viridis colors
+  geom_point(position = position_jitter(width=.1, height = 0), size = 2, alpha = 0.8) +  # Add points with jitter using viridis colors
   stat_summary(fun = "mean", geom = "crossbar", width = 0.3, color = "black", size = 0.5) +  # Add horizontal lines at means
-  scale_color_viridis(discrete = TRUE, option = "D") +  # Use Viridis color scale for points
+  scale_color_viridis(discrete = TRUE, option = "D", direction = -1) +  # Use Viridis color scale for points
   theme(
     axis.text.x = element_text(size = 12, colour = "black"),  # X-axis labels
     axis.text.y = element_text(size = 12, colour = "black"),  # Y-axis labels
@@ -1210,6 +1233,105 @@ pdf(file=paste0(homedir, "/results/Figures_for_msanxiety_paper/UF_anxiety_severi
 dev.off()
 
 
+```
+
+##### Box plot with jitter ND OTHERS
+```{r box_jitter}
+#### trying prettier things
+df_disease_burden_unc_and_anx_net_collapsed_variables <- df_demo_and_fascicles %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
+  filter(anxiety_dose != -1) %>%
+  mutate(anxiety_severity = ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "true_healthy", "MS+noA", 
+                                   ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "Has.Anxietydx.OR.Antianxiety.Meds", "MS+mildA", "MS+severeA"))) %>% 
+  mutate(anxiety_severity = factor(anxiety_severity, levels = c("MS+noA", "MS+mildA", "MS+severeA"))) %>%
+  mutate(mean_UF_prop = mean_UF_prop*100) 
+
+##BOX PLOT WITH JITTER
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x = anxiety_severity, y = mean_UF_prop, color = anxiety_severity)) +
+  geom_boxplot(aes(fill = anxiety_severity), alpha = 0.3, outlier.size = 0) +  # Add boxplots with some transparency
+  geom_jitter(width = 0.2, size = 2, alpha = 0.8) +  # Add jittered points for individual observations
+  scale_color_viridis(discrete = TRUE, option = "D") +  # Use Viridis color scale
+  scale_fill_viridis(discrete = TRUE, option = "D") +
+  theme(
+    axis.text.x = element_text(size = 12, colour = "black"),
+    axis.text.y = element_text(size = 12, colour = "black"),
+    axis.title.y = element_text(size = 16, colour = "black"),
+    axis.title.x = element_blank(),
+    axis.line = element_line(linewidth = 1.5, colour = "black"),
+    legend.position = "none",
+    panel.background = element_rect(colour = "white", fill = "white")
+  ) + 
+  labs(y = "Percent (%) of Uncinate Injured")
+
+# Display the plot
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot
+
+##### BOX PLOT NO JITTER
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x = anxiety_severity, y = mean_UF_prop, color = anxiety_severity)) +
+  geom_boxplot(aes(fill = anxiety_severity), alpha = 0.3, outlier.size = 0) +  # Add boxplots with some transparency
+#  geom_jitter(width = 0.2, size = 2, alpha = 0.8) +  # Add jittered points for individual observations
+  scale_color_viridis(discrete = TRUE, option = "D") +  # Use Viridis color scale
+  scale_fill_viridis(discrete = TRUE, option = "D") +
+  theme(
+    axis.text.x = element_text(size = 12, colour = "black"),
+    axis.text.y = element_text(size = 12, colour = "black"),
+    axis.title.y = element_text(size = 16, colour = "black"),
+    axis.title.x = element_blank(),
+    axis.line = element_line(linewidth = 1.5, colour = "black"),
+    legend.position = "none",
+    panel.background = element_rect(colour = "white", fill = "white")
+  ) + 
+  labs(y = "Percent (%) of Uncinate Injured")
+
+# Display the plot
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot
+
+###dot plot
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x = anxiety_severity, y = mean_UF_prop, color = anxiety_severity)) +
+  geom_point(position = position_jitter(width = 0.2, height = 0), size = 2, alpha = 0.8) +  # Individual data points with jitter
+  stat_summary(fun = "mean", geom = "point", size = 4, shape = 21, fill = "black") +  # Mean points
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +  # Confidence intervals
+  scale_color_viridis(discrete = TRUE, option = "D") +
+  theme(
+    axis.text.x = element_text(size = 12, colour = "black"),
+    axis.text.y = element_text(size = 12, colour = "black"),
+    axis.title.y = element_text(size = 16, colour = "black"),
+    axis.title.x = element_blank(),
+    axis.line = element_line(linewidth = 1.5, colour = "black"),
+    legend.position = "none",
+    panel.background = element_rect(colour = "white", fill = "white")
+  ) + 
+  labs(y = "Percent (%) of Uncinate Injured")
+
+# Display the plot
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot
+
+
+### bar with error
+summary_stats <- df_disease_burden_unc_and_anx_net_collapsed_variables %>%
+  group_by(anxiety_severity) %>%
+  summarize(mean_UF_prop = mean(mean_UF_prop, na.rm = TRUE),
+            sd_UF_prop = sd(mean_UF_prop, na.rm = TRUE),
+            n = n(),
+            se_UF_prop = sd_UF_prop / sqrt(n))
+
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(summary_stats, aes(y = anxiety_severity, x = mean_UF_prop, fill = anxiety_severity)) +
+  geom_bar(stat = "identity", position = position_dodge(), width = 0.7) +  # Bar plot
+  geom_errorbar(aes(xmin = mean_UF_prop - se_UF_prop, xmax = mean_UF_prop + se_UF_prop), width = 0.2) +  # Error bars
+  scale_fill_viridis(discrete = TRUE, option = "D") +
+  theme(
+    axis.text.x = element_text(size = 12, colour = "black"),
+    axis.text.y = element_text(size = 12, colour = "black"),
+#    axis.title.y = element_text(size = 16, colour = "black"),
+    axis.title.y = element_blank(),
+    axis.line = element_line(linewidth = 1.5, colour = "black"),
+    legend.position = "none",
+    panel.background = element_rect(colour = "white", fill = "white")
+  ) + 
+  labs(x = "Percent (%) of Uncinate Injured")
+
+# Display the plot
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot
 ```
 
 ### Sex Differences lm and chisq - N.S.
