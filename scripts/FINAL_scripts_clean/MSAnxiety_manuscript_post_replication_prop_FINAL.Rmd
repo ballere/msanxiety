@@ -418,7 +418,7 @@ simple_demo_promis_diagnosis <- make_demographics_table_ms_w_promis_anxiety(data
 
 #save 
 simple_demo_promis_diagnosis_df <- print(simple_demo_promis_diagnosis, as.data.frame = TRUE)
-write.csv(simple_demo_all_groups_df, file = paste0(homedir, "/results/simple_demo_promis_diagnosis_df.csv"), row.names = TRUE)
+write.csv(simple_demo_promis_diagnosis_df, file = paste0(homedir, "/results/simple_demo_promis_diagnosis_df.csv"), row.names = TRUE)
 
 #------
 
@@ -1265,13 +1265,55 @@ prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_di
 
 # Display the plot
 prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot
+```
+
+##### Box plot no jitter
+```{r box_plot_no_jitter}
+
+####
+df_disease_burden_unc_and_anx_net_collapsed_variables <- df_demo_and_fascicles %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
+  filter(anxiety_dose != -1) %>%
+  mutate(anxiety_severity = ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "true_healthy", "MS+noA", 
+                                   ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "Has.Anxietydx.OR.Antianxiety.Meds", "MS+mildA", "MS+severeA"))) %>% 
+  mutate(anxiety_severity = factor(anxiety_severity, levels = c("MS+noA", "MS+mildA", "MS+severeA"))) %>%
+  mutate(mean_UF_prop = mean_UF_prop*100) 
+
+
+# Define a custom palette
+custom_colors <- c(
+  
+  #"MS+noA" = "#1F968B",
+  #"MS+mildA" = "#39568C",
+  #"MS+severeA" = "#482677" 
+    #"MS+noA" = "#55C667",
+  #"MS+mildA" = "#238A8D",
+  #"MS+severeA" = "#404788" 
+    #  "MS+noA" = "#404788",
+#  "MS+mildA" = "#482677",
+#  "MS+severeA" = "#440154" 
+  #      "MS+noA" = "#1f968abf",
+  #"MS+mildA" = "#33638d",
+  #"MS+severeA" = "#482677" 
+ #         "MS+noA" = "#29af7f",
+#  "MS+mildA" = "#33638d",
+#  "MS+severeA" = "#440154" 
+            "MS+noA" = "#55c667",
+  "MS+mildA" = "#2d708e",
+  "MS+severeA" = "#440154" 
+ # "MS+mildA" = viridis::viridis(3, option = "C")[2],  # Use green from 'D' for MS+noA
+#  "MS+severeA" = viridis::viridis(3, option = "D")[1],  # Use a different color from 'D'
+#  "MS+noA" = viridis::viridis(3, option = "D")[2]  # Use the last color from 'D'
+)
 
 ##### BOX PLOT NO JITTER
 prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x = anxiety_severity, y = mean_UF_prop, color = anxiety_severity)) +
-  geom_boxplot(aes(fill = anxiety_severity), alpha = 0.3, outlier.size = 0) +  # Add boxplots with some transparency
+  geom_boxplot(aes(fill = anxiety_severity), alpha = 0.65, outlier.size = 0) +  # Add boxplots with some transparency
+    scale_color_manual(values = custom_colors) +  # Apply custom color scale
+  scale_fill_manual(values = custom_colors) +  # Apply custom fill scale
 #  geom_jitter(width = 0.2, size = 2, alpha = 0.8) +  # Add jittered points for individual observations
-  scale_color_viridis(discrete = TRUE, option = "D") +  # Use Viridis color scale
-  scale_fill_viridis(discrete = TRUE, option = "D") +
+  #scale_color_viridis(discrete = TRUE, option = "C", direction = -1) +  # Use Viridis color scale
+  #scale_fill_viridis(discrete = TRUE, option = "C", direction = -1) +
   theme(
     axis.text.x = element_text(size = 12, colour = "black"),
     axis.text.y = element_text(size = 12, colour = "black"),
@@ -1279,6 +1321,7 @@ prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_di
     axis.title.x = element_blank(),
     axis.line = element_line(linewidth = 1.5, colour = "black"),
     legend.position = "none",
+    aspect.ratio = 7/6,
     panel.background = element_rect(colour = "white", fill = "white")
   ) + 
   labs(y = "Percent (%) of Uncinate Injured")
@@ -1286,7 +1329,45 @@ prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_di
 # Display the plot
 prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot
 
-###dot plot
+
+#save pdf
+pdf(file=paste0(homedir, "/results/Figures_for_msanxiety_paper/UF_anxiety_severity_box_plot_no_jitter.pdf"))
+  prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot
+dev.off()
+
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_horiz <- ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(y = anxiety_severity, x = mean_UF_prop, color = anxiety_severity)) +
+  geom_boxplot(aes(fill = anxiety_severity), alpha = 0.65, outlier.size = 0) +  # Add boxplots with some transparency
+#  geom_jitter(width = 0.2, size = 2, alpha = 0.8) +  # Add jittered points for individual observations
+  scale_color_viridis(discrete = TRUE, option = "D", direction = -1) +  # Use Viridis color scale
+  scale_fill_viridis(discrete = TRUE, option = "D", direction = -1) +
+  theme(
+    axis.text.x = element_text(size = 12, colour = "black"),
+    axis.text.y = element_text(size = 12, colour = "black"),
+    axis.title.x = element_text(size = 16, colour = "black"),
+    axis.title.y = element_blank(),
+    axis.line = element_line(linewidth = 1.5, colour = "black"),
+    legend.position = "none",
+    aspect.ratio = 5/6,
+    panel.background = element_rect(colour = "white", fill = "white")
+  ) + 
+  labs(x = "Percent (%) of Uncinate Injured")
+prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot_horiz
+
+```
+
+
+###### dot plot
+```{r dot_plot_and_others}
+
+df_disease_burden_unc_and_anx_net_collapsed_variables <- df_demo_and_fascicles %>%
+  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
+  filter(anxiety_dose != -1) %>%
+  mutate(anxiety_severity = ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "true_healthy", "MS+noA", 
+                                   ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed == "Has.Anxietydx.OR.Antianxiety.Meds", "MS+mildA", "MS+severeA"))) %>% 
+  mutate(anxiety_severity = factor(anxiety_severity, levels = c("MS+noA", "MS+mildA", "MS+severeA"))) %>%
+  mutate(mean_UF_prop = mean_UF_prop*100) 
+
+##plot
 prop_injured_mean_uncinate_by_anxiety_burden_collapsed_vars_plot <- ggplot(df_disease_burden_unc_and_anx_net_collapsed_variables, aes(x = anxiety_severity, y = mean_UF_prop, color = anxiety_severity)) +
   geom_point(position = position_jitter(width = 0.2, height = 0), size = 2, alpha = 0.8) +  # Individual data points with jitter
   stat_summary(fun = "mean", geom = "point", size = 4, shape = 21, fill = "black") +  # Mean points
