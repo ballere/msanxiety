@@ -1209,6 +1209,43 @@ lm_summary_stats <- function(lm_model, which_variable) {
   return(text)
 }
 
+# cohen_d_for_ttest
+t_and_cohen_d <- function(sample_1, sample_2, paired = "F"){
+  
+  #run t test
+  t_test <- t.test(sample_1, sample_2, paired=paired)
+  
+  #extract statistics
+  t <- round(t_test$statistic,2)
+  p <- round(t_test$p.value,3)
+  
+  #degrees of freedom
+  df <- round(t_test$parameter, 2)
+  
+  #find means and variances
+  mean_of_sample_1 <- mean(sample_1)
+  mean_of_sample_2 <- mean(sample_2)
+  variance_sample_1 <- var(sample_1)
+  variance_sample_2 <- var(sample_2)
+  
+  #calculate cohen's D
+  cohen_d <- round((mean_of_sample_2-mean_of_sample_1)/sqrt((variance_sample_1 + variance_sample_2)/2),2)
+  
+  #score effect size
+  eff_size = case_when(
+    abs(cohen_d) >=0.8 ~ "large",
+    abs(cohen_d) >= 0.5 & cohen_d < 0.8 ~ "medium",
+    abs(cohen_d) >= 0.2 & cohen_d < 0.5 ~ "small",
+    abs(cohen_d) >= 0 & cohen_d < 0.2 ~"minimal"
+  )
+  
+  #put in text output
+  text = paste0("(T = ", t, ", df = ", df, ", P = ", p, ", Cohen's d =  ", cohen_d, ", Effect size = ", eff_size, ")")
+  return(list(text, p, cohen_d))
+
+}
+  
+
 #for hydra k3
 cohen_d_onepair <- function(data_frame, subtypeA, subtypeB, measure, hydra_cluster) {
   grpA_for_parse <- paste0("data_frame$", measure, "[which(data_frame$Hydra_k", hydra_cluster, " == ", subtypeA, ")]")
