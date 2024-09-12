@@ -83,7 +83,8 @@ bcp <- read.csv("/Users/eballer/BBL/medication_data/BCP_est_and_prog_levels_and_
 bcp$bcp_name <- toupper(bcp$bcp_name)
 
 #read in ms med info, names of meds, mechanism, and whether or not dmt
-msmeds <- read.csv("/Users/eballer/BBL/medication_data/ms_medications_brand_and_generic.csv", sep = ",", header = TRUE)
+msmeds <- read.csv("/Users/eballer/BBL/medication_data/ms_medications_brand_and_generic_cleaned.csv", sep = ",", header = TRUE)
+#msmeds <- read.csv("/Users/eballer/BBL/medication_data/ms_medications_brand_and_generic.csv", sep = ",", header = TRUE)
 msmeds$Medication <- toupper(msmeds$Medication)
 
 #depression/psych meds from NAMI website 
