@@ -90,7 +90,72 @@ make_demographics_table_ms_anxiety_simple<- function(data_frame) {
   print(demo_table_by_on_depAndAnxiety_true_healthy , showAllLevels = TRUE)
   
   
+  return(demo_table_by_on_depAndAnxiety_true_healthy)
+}
+
+make_ms_med_summary_table_ms_anxiety_simple<- function(data_frame) {
+  #subset demographics
+  listVars <- c("oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed",
+                "anxiety_dose",
+                "on_anti_cd20",
+                "on_interferon",
+                "on_steroids",
+                "on_DHODH_inhibitor",
+                "on_a4_integrin_inhibitor",
+                "on_anti_metabolite",
+                "on_mbp_analog",
+                "on_nrf_2",
+                "on_s1p_agonist")
+                
   
+  #for_parse <- paste0("data.frame(data_frame$race_binarized, data_frame$sex_binarized, data_frame$PAT_AGE_AT_EXAM, data_frame$depGroupVar, data_frame$PHQ.2, data_frame$PHQ.9)")
+  # for_parse <- paste0(data.frame(data_frame$race_binarized,
+  for_parse <- paste0("data.frame(
+                      data_frame$oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed,
+                      data_frame$anxiety_dose,
+                      data_frame$On.Anti_cd20,
+                      data_frame$On.Interferon,
+                      data_frame$On.Steroids,
+                      data_frame$On.DHODH_inhibitor,
+                      data_frame$On.a4_integrin_inhibitor,
+                      data_frame$On.anti_metabolite,
+                      data_frame$On.mbp_analog,
+                      data_frame$On.nrf_2,
+                      data_frame$On.s1p_agonist)")
+  
+  
+  demo <- eval(parse(text = for_parse)) 
+  names(demo) <- c(listVars)
+  
+  #Change categorical values to have names
+  
+  ### uncomment the line below if you want to binarize race
+  # demo$Race <- ifelse(demo$Race == 1, "Caucasian", "Non-caucasian")
+  #demo$Sex <- ifelse(demo$Sex == 1, "Male", "Female")
+  
+  
+  
+  #Define Categorical Variables
+  cat_variables <- c("oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed", 
+                     "on_anti_cd20", 
+                     "on_interferon", 
+                     "on_steroids", 
+                     "on_DHODH_inhibitor",
+                     "on_a4_integrin_inhibitor",
+                     "on_anti_metabolite",
+                     "on_mbp_analog",
+                     "on_nrf_2",
+                     "on_s1p_agonist")
+  
+  title <- c(paste0("MS_medications"))
+  
+
+  #Groups - true healthy, anxiety OR anti anxiety meds, anxiety AND antianxiety meds
+  msmeds_table <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed"))
+  print(msmeds_table , showAllLevels = TRUE)
+  
+  
+  return(msmeds_table)
 }
 
 make_demographics_table_ms_w_promis_anxiety<- function(data_frame) {
@@ -126,6 +191,7 @@ make_demographics_table_ms_w_promis_anxiety<- function(data_frame) {
                 "PostOp.PROMIS.Mental.Score") #Race 1 = caucasian, Sex 1 = M age = years
   
   
+ 
   #for_parse <- paste0("data.frame(data_frame$race_binarized, data_frame$sex_binarized, data_frame$PAT_AGE_AT_EXAM, data_frame$depGroupVar, data_frame$PHQ.2, data_frame$PHQ.9)")
   # for_parse <- paste0(data.frame(data_frame$race_binarized,
   for_parse <- paste0("data.frame(data_frame$RACE, 
@@ -175,7 +241,7 @@ make_demographics_table_ms_w_promis_anxiety<- function(data_frame) {
   demo_table_by_on_depAndAnxiety_true_healthy <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed"))
   print(demo_table_by_on_depAndAnxiety_true_healthy , showAllLevels = TRUE)
   
-  
+  return(demo_table_by_on_depAndAnxiety_true_healthy)
 }
 
 make_demographics_table_ms_anxiety<- function(data_frame) {
@@ -324,7 +390,6 @@ make_demographics_table_ms_anxiety<- function(data_frame) {
   #Groups - true healthy, anxiety OR anti anxiety meds, anxiety AND antianxiety meds
   demo_table_by_on_depAndAnxiety_true_healthy <- CreateTableOne(vars = listVars, data = demo, factorVars = cat_variables, strata = c("oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed"))
   print(demo_table_by_on_depAndAnxiety_true_healthy , showAllLevels = TRUE)
-  
   
   
 }
@@ -1183,6 +1248,106 @@ gam_summary_stats <- function(gam_model) {
   text = paste0("(T = ", t, ", P = ", p, ", Cohen's f2 =  ", f2, ", Effect size = ", eff_size, ")")
   return(text)
 }
+
+lm_summary_stats <- function(lm_model, which_variable) {
+  ### Extract T, P, Eff size, eff size size
+  #picks whatever variable you want, intercept is 1, first actual variable would be 2, etc
+  #t val
+  t <- round(summary(lm_model)[["coefficients"]][, "t value"][which_variable], 3)
+  
+  #p
+  p <- round(summary(lm_model)[["coefficients"]][, "Pr(>|t|)"][which_variable],3)
+
+
+  #f2 - R2/1-R2
+  r2 <- summary(lm_model)$r.squared
+  f2 <- round(r2/(1-r2), 3)
+  
+  #eff size summary
+  eff_size = case_when(
+    f2 >=0.35 ~ "large",
+    f2 >= 0.15 & f2 < 0.35 ~ "medium",
+    f2 >= 0.02 & f2 < 0.15 ~ "small",
+    f2 >= 0 & f2 < 0.02 ~"minimal"
+  )
+  
+  text = paste0("(T = ", t, ", P = ", p, ", Cohen's f2 =  ", f2, ", Effect size = ", eff_size, ")")
+  return(text)
+}
+
+# cohen_d_for_ttest
+t_and_cohen_d <- function(sample_1, sample_2, paired = "F"){
+  
+  #run t test
+  t_test <- t.test(sample_1, sample_2, paired=paired)
+  
+  #extract statistics
+  t <- round(t_test$statistic,2)
+  p <- round(t_test$p.value,3)
+  
+  #degrees of freedom
+  df <- round(t_test$parameter, 2)
+  
+  #find means and variances
+  mean_of_sample_1 <- mean(sample_1)
+  mean_of_sample_2 <- mean(sample_2)
+  variance_sample_1 <- var(sample_1)
+  variance_sample_2 <- var(sample_2)
+  
+  #calculate cohen's D
+  cohen_d <- round((mean_of_sample_2-mean_of_sample_1)/sqrt((variance_sample_1 + variance_sample_2)/2),2)
+  
+  #score effect size
+  eff_size = case_when(
+    abs(cohen_d) >=0.8 ~ "large",
+    abs(cohen_d) >= 0.5 & cohen_d < 0.8 ~ "medium",
+    abs(cohen_d) >= 0.2 & cohen_d < 0.5 ~ "small",
+    abs(cohen_d) >= 0 & cohen_d < 0.2 ~"minimal"
+  )
+  
+  #put in text output
+  text = paste0("(T = ", t, ", df = ", df, ", P = ", p, ", Cohen's d =  ", cohen_d, ", Effect size = ", eff_size, ")")
+  return(list(text, p, cohen_d))
+
+}
+  
+
+# cohen_d_for_ttest
+t_p_and_cohen_d <- function(sample_1, sample_2, paired = "F"){
+  
+  #run t test
+  t_test <- t.test(sample_1, sample_2, paired=paired)
+  
+  #extract statistics
+  t <- round(t_test$statistic,2)
+  p <- round(t_test$p.value,3)
+  
+  #degrees of freedom
+  df <- round(t_test$parameter, 2)
+  
+  #find means and variances
+  mean_of_sample_1 <- mean(sample_1)
+  mean_of_sample_2 <- mean(sample_2)
+  variance_sample_1 <- var(sample_1)
+  variance_sample_2 <- var(sample_2)
+  
+  #calculate cohen's D
+  cohen_d <- round((mean_of_sample_2-mean_of_sample_1)/sqrt((variance_sample_1 + variance_sample_2)/2),2)
+  
+  #score effect size
+  eff_size = case_when(
+    abs(cohen_d) >=0.8 ~ "large",
+    abs(cohen_d) >= 0.5 & cohen_d < 0.8 ~ "medium",
+    abs(cohen_d) >= 0.2 & cohen_d < 0.5 ~ "small",
+    abs(cohen_d) >= 0 & cohen_d < 0.2 ~"minimal"
+  )
+  
+  #put in text output
+  text = paste0("(T = ", t, ", df = ", df, ", P = ", p, ", Cohen's d =  ", cohen_d, ", Effect size = ", eff_size, ")")
+  return(list(text, t, p, cohen_d))
+  
+}
+
 
 #for hydra k3
 cohen_d_onepair <- function(data_frame, subtypeA, subtypeB, measure, hydra_cluster) {
