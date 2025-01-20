@@ -1009,8 +1009,7 @@ tibble_overall_summaries_by_sex <- df_disease_burden_unc_and_anx_net_collapsed_v
 
 
 ### Lesion volumes 
-#### Diagnosis 
-  - sick > healthy in vol of lesions
+#### Diagnosis - sick > healthy in vol of lesions
 ```{r lesion_volumes_dx}
  df_empi_dx_network_proportions <- df_demo_and_fascicles %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
@@ -1028,13 +1027,12 @@ tibble_overall_summaries_by_sex <- df_disease_burden_unc_and_anx_net_collapsed_v
 volume_of_mimosa_lesions_gam <- gam(volume_of_mimosa_lesions ~ Diagnosis + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data = df_empi_dx_network_proportions)
 summary(volume_of_mimosa_lesions_gam)
 
- #print summary stats
+ #print summary stats; (T = 3.04, P = 0.003, Cohen's f2 =  0.342, Effect size = medium)
  gam_summary_stats(volume_of_mimosa_lesions_gam)
 ```
 
 
-#### Anxiety dose
-  - anxiety dose correlates with disease burden (volume of lesions)
+#### Anxiety dose- anxiety dose correlates with disease burden (volume of lesions)
 ```{r lesion_volumes_anxiety_dose}
 df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
@@ -1046,14 +1044,13 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   anxiety_dose_volume_of_mimosa_lesions_by_sex_gam <- gam(volume_of_mimosa_lesions ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = T), data=df_demo_and_fascicles_no_unclass_anxiety_dose)
   summary(anxiety_dose_volume_of_mimosa_lesions_by_sex_gam)
   
-   #print summary stats
+   #print summary stats; (T = 3.084, P = 0.0022, Cohen's f2 =  0.12, Effect size = small)
  gam_summary_stats(anxiety_dose_volume_of_mimosa_lesions_by_sex_gam)
   
 ```
 
 ### Whole brain volumes 
-#### Diagnosis 
-  - sick > healthy in vol of lesions
+#### Diagnosis - sick > healthy in vol of lesions
 ```{r lesion_volumes_dx}
  df_empi_dx_network_proportions <- df_demo_and_fascicles %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
@@ -1319,15 +1316,11 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   ungroup() #n=123
  
 
-#bilateral UF ~ Diagnosis: DiagnosisMS+Anxiety   0.10624    0.05255   2.022   0.0455  * original result
-
 #First, test if they are related. If so, they can't really be modeled together -> 
 
-  corr_LV_to_UF <- cor.test(uncinate_by_dx_df$volume_of_mimosa_lesions,uncinate_by_dx_df$mean_UF_vol) #corr 0.69; 
+  corr_LV_to_UF <- cor.test(uncinate_by_dx_df$volume_of_mimosa_lesions,uncinate_by_dx_df$mean_UF_vol) #corr 0.69; p-value < 2.2e-16
   print(corr_LV_to_UF)
-  
-  lesion_vol_UF_lm <- lm(uncinate_by_dx_df$volume_of_mimosa_lesions~ uncinate_by_dx_df$mean_UF_vol) #P <2.2*10^-16, they are colinear
-  summary(lesion_vol_UF_lm) #T=10.585
+
   
   #how about in fornix
   
@@ -1338,21 +1331,13 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   summary(lesion_vol_fornix_lm) #T = 4.047
 
   ## Try scaling mean volume
-  disease_mean_scaled_UF_vol_gam <- gam(mean_UF_vol_scaled_total_vol_lesions ~ Diagnosis + osex+s(PAT_AGE_AT_EXAM, k = 4, fx = F), data = uncinate_by_dx_df)
-  summary(disease_mean_scaled_UF_vol_gam) #- N.S.
+ # disease_mean_scaled_UF_vol_gam <- gam(mean_UF_vol_scaled_total_vol_lesions ~ Diagnosis + osex+s(PAT_AGE_AT_EXAM, k = 4, fx = F), data = uncinate_by_dx_df)
+  #summary(disease_mean_scaled_UF_vol_gam) #- N.S.
   
   #print summary stats; (T = -0.556, P = 0.579, Cohen's f2 =  0.007, Effect size = minimal)"
-  gam_summary_stats(disease_mean_scaled_UF_vol_gam)
+  #gam_summary_stats(disease_mean_scaled_UF_vol_gam)
   
-  #How about predicting Diagnosis? - nope
-  diagnosis_prediction <- glm(Diagnosis ~ mean_UF_prop + Diagnosis + osex+PAT_AGE_AT_EXAM + volume_of_mimosa_lesions, data = uncinate_by_dx_df, family = "binomial")
-  summary(diagnosis_prediction)
-  confint(diagnosis_prediction)
-
-  #how about predicting diagnosis with scaled UF? N.S.
-  diagnosis_prediction_scaled <- glm(Diagnosis ~ mean_UF_vol_scaled_total_vol_lesions + Diagnosis + osex+PAT_AGE_AT_EXAM, data = uncinate_by_dx_df, family = "binomial")
-  summary(diagnosis_prediction_scaled)
-  confint(diagnosis_prediction_scaled)
+  
   
   
   
@@ -1375,21 +1360,8 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
   filter(anxiety_dose != -1) #n=372
 
-
-    #bilat anxiety dose + sex + age: anxiety_dose    0.04989    0.02397   2.082   0.0381 * original result
-
-  #How about predicting Diagnosis? volume_of_mimosa_lesions  1.518e-05  7.147e-06   2.124   0.0357 *
-  diagnosis_prediction <- lm(anxiety_dose ~ mean_UF_prop + osex+PAT_AGE_AT_EXAM + volume_of_mimosa_lesions, data = uncinate_by_dx_df)
-  summary(diagnosis_prediction)
-  confint(diagnosis_prediction)
-
-
-### modeling volume of mimosa lesions like this doesn't make sense
- #anxietyGrouping_mean_UF_by_sex_w_LV_gam_prop <- gam(mean_UF_prop ~ anxiety_dose + osex + s(PAT_AGE_AT_EXAM, k = 4, fx = F) + volume_of_mimosa_lesions, data=df_demo_and_fascicles_no_unclass_anxiety_dose)
- # summary(anxietyGrouping_mean_UF_by_sex_w_LV_gam_prop)
- 
-  #print summary stats
-  #gam_summary_stats(anxietyGrouping_mean_UF_by_sex_w_LV_gam_prop)
+corr_LV_to_UF_anxiety_dose <- cor.test(df_demo_and_fascicles_no_unclass_anxiety_dose$volume_of_mimosa_lesions,df_demo_and_fascicles_no_unclass_anxiety_dose$mean_UF_vol) #
+  print(corr_LV_to_UF_anxiety_dose)
 
 ```
 ###### JAMA ANALYSIS- UF Anxiety diagnosis + total brain vol
@@ -1419,8 +1391,6 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   corr_tbv_to_UF <- cor.test(uncinate_by_dx_df$total_volume,uncinate_by_dx_df$mean_UF_vol) #corr 0.69; 
   print(corr_tbv_to_UF)
   
-  total_vol_UF_lm <- lm(uncinate_by_dx_df$total_volume~ uncinate_by_dx_df$mean_UF_vol) #P <2.2*10^-16, they are colinear
-  summary(total_vol_UF_lm) 
   
   #can covary, no change: "(T = 2.009, P = 0.047, Cohen's f2 =  0.19, Effect size = medium)"
   disease_UF_cov_brain_vol_gam <- gam(mean_UF_prop ~ Diagnosis + osex+s(PAT_AGE_AT_EXAM, k = 4, fx = F) + total_volume, data = uncinate_by_dx_df)
@@ -1447,8 +1417,6 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   corr_tbv_to_UF <- cor.test(df_demo_and_fascicles_no_unclass_anxiety_dose$total_volume,df_demo_and_fascicles_no_unclass_anxiety_dose$mean_UF_vol) #corr 0.69; 
   print(corr_tbv_to_UF)
   
-  total_vol_UF_lm <- lm(df_demo_and_fascicles_no_unclass_anxiety_dose$total_volume~ df_demo_and_fascicles_no_unclass_anxiety_dose$mean_UF_vol) #P <2.2*10^-16, they are colinear
-  summary(total_vol_UF_lm) 
   
   #can covary, no change: (T = 2.089, P = 0.037, Cohen's f2 =  0.102, Effect size = small)
   disease_UF_cov_brain_vol_dose_gam <- gam(mean_UF_prop ~ anxiety_dose + osex+s(PAT_AGE_AT_EXAM, k = 4, fx = F) + total_volume, data = df_demo_and_fascicles_no_unclass_anxiety_dose)
@@ -1456,122 +1424,9 @@ df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
   gam_summary_stats(disease_UF_cov_brain_vol_dose_gam)
 
 ```
-##### JAMA Analysis: Residuals vs UF
-```{r dep_anxiety_UF}
-
-
-## Definte data frams
-################
-## depression ##
-################
-df_dep <- df_demo_and_fascicles %>%
-  filter(depGroupVar != 0) %>%
-  mutate(depDiagnosis = as.factor(ifelse(depGroupVar ==2, "MS+Depression", "MS+noDepression")))
- 
-####################### 
-## anxiety diagnosis ##
-#######################
-df_anxiety_dx <- df_demo_and_fascicles %>%
-  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
-  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "Has.Anxietydx.OR.Antianxiety.Meds") %>%
-  mutate(subject = as.factor(EMPI)) %>%
-  mutate(anxiety_Diagnosis = oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed) %>%
-  mutate(anxiety_Diagnosis = ifelse(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed=="true_healthy", "MS-Anxiety", "MS+Anxiety")) %>%
-  mutate(anxiety_Diagnosis = as.factor(anxiety_Diagnosis)) %>%
-  ungroup()
- 
- 
-##################
-## anxiety dose ##
-################## 
-df_anxiety_dose <-  df_demo_and_fascicles %>%
-  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
-  filter(anxiety_dose != -1) #n=372
-
- 
-
-### stats
-# Step 1: Fit the three models
-
-# Model 1: depDiagnosis with df_dep
-model_depDiagnosis <- gam(mean_UF_prop ~ depDiagnosis + s(PAT_AGE_AT_EXAM, k=4, fx=F) + osex, data = df_dep)
-
-# Model 2: anxiety_Diagnosis with df_anxiety_dx
-model_anxiety_Diagnosis <- gam(mean_UF_prop ~ anxiety_Diagnosis + s(PAT_AGE_AT_EXAM, k=4, fx=F) + osex, data = df_anxiety_dx)
-
-# Model 3: anxiety_dose with df_anxiety_dose
-model_anxiety_dose <- gam(mean_UF_prop ~ anxiety_dose + s(PAT_AGE_AT_EXAM, k=4, fx=F) + osex, data = df_anxiety_dose)
-
-# Step 2: Extract residuals from each model (mean_UF_prop adjusted for age and sex)
-residuals_depDiagnosis <- residuals(model_depDiagnosis)
-residuals_anxiety_Diagnosis <- residuals(model_anxiety_Diagnosis)
-residuals_anxiety_dose <- residuals(model_anxiety_dose)
-
-# Step 3: Calculate the correlation between mean_UF_prop and the predictors (residuals)
-cor_depDiagnosis <- cor(df_dep$mean_UF_prop, residuals_depDiagnosis)
-cor_anxiety_Diagnosis <- cor(df_anxiety_dx$mean_UF_prop, residuals_anxiety_Diagnosis)
-cor_anxiety_dose <- cor(df_anxiety_dose$mean_UF_prop, residuals_anxiety_dose)
-
-# Print the correlation results
-cat("Correlation between mean_UF_prop and depDiagnosis: ", cor_depDiagnosis, "\n")
-cat("Correlation between mean_UF_prop and anxiety_Diagnosis: ", cor_anxiety_Diagnosis, "\n")
-cat("Correlation between mean_UF_prop and anxiety_dose: ", cor_anxiety_dose, "\n")
-
-# Step 4: Perform Steiger's test for comparing the correlations
-# Create a function for Steiger's test (comparison of two correlated correlations)
-steiger_test <- function(r12, r13, n) {
-  # r12: correlation between variable1 and variable2
-  # r13: correlation between variable1 and variable3
-  # n: sample size
-  
-  # Calculate the Z score for comparison
-  z <- (r12 - r13) / sqrt((1 - r12^2) / (n - 3) + (1 - r13^2) / (n - 3))
-  p_value <- 2 * (1 - pnorm(abs(z)))  # Two-tailed p-value
-  
-  return(list(Z_score = z, p_value = p_value))
-}
-
-# Sample size (number of subjects)
-n = length(Reduce(intersect, list(df_dep$EMPI, df_anxiety_dx$EMPI, df_anxiety_dose$EMPI)))  
-
-# Step 5: Test for differences between correlations
-# Test if the correlation between anxiety_Diagnosis and mean_UF_prop is stronger than depression
-steiger_test_anxiety_vs_dep <- steiger_test(cor_anxiety_Diagnosis, cor_depDiagnosis, n)
-
-# Test if the correlation between anxiety_dose and mean_UF_prop is stronger than depression
-steiger_test_anxiety_dose_vs_dep <- steiger_test(cor_anxiety_dose, cor_depDiagnosis, n)
-
-# Output the results of Steiger's test; Z score:  -0.7806441 ; p-value:  0.4350118 
-cat("Steiger's Test: Anxiety Diagnosis vs Depression Diagnosis\n")
-cat("Z score: ", steiger_test_anxiety_vs_dep$Z_score, "\n")
-cat("p-value: ", steiger_test_anxiety_vs_dep$p_value, "\n")
-
-#Z score:  0.07445476 ; p-value:  0.9406485 
-cat("Steiger's Test: Anxiety Dose vs Depression Diagnosis\n")
-cat("Z score: ", steiger_test_anxiety_dose_vs_dep$Z_score, "\n")
-cat("p-value: ", steiger_test_anxiety_dose_vs_dep$p_value, "\n")
-```
-
-```
-##### JAMA ANALYSIS - compare correlations w/wout uncinate
-```{r other_injured_fascicles}
-df_demo_and_fascicles_no_unclass_anxiety_dose <- df_demo_and_fascicles %>%
-  filter(oanxietydx_OR_meds_AND_Anxietydx.Meds.And.Dep.True.Healthy.Collapsed != "unclassified") %>%
-  filter(anxiety_dose != -1)  %>% #n=372 
-  mutate(total_lesion_burden_no_UF = sum_fascicle_vol_lost - (UF_L_vol + UF_R_vol))
-
-#almost identical because uncinate is small
-#t=2.05, p = 0.04083
-cor_lesion_burden_by_anxiety = cor.test(df_demo_and_fascicles_no_unclass_anxiety_dose$anxiety_dose, df_demo_and_fascicles_no_unclass_anxiety_dose$sum_fascicle_vol_lost)
-print(cor_lesion_burden_by_anxiety)
-
-#t=2.05, p = 0.04075
-cor_lesion_burden_no_UF_by_anxiety = cor.test(df_demo_and_fascicles_no_unclass_anxiety_dose$anxiety_dose, df_demo_and_fascicles_no_unclass_anxiety_dose$total_lesion_burden_no_UF)
-print(cor_lesion_burden_no_UF_by_anxiety)
 
 
 
-```
 
 
 ##### No steroids/IF -N.S. but low n's
@@ -1752,7 +1607,7 @@ summary(disease_between_sexes_UF_mean_prop)
 ### Plots 
 
 ##### Overall disease in brain
-```{r}
+```{r overall_disease_bruden}
 #n = 372
 
 df_disease_burden_unc_and_anx_net_collapsed_variables <- df_demo_and_fascicles %>%
